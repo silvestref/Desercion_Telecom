@@ -1,0 +1,31 @@
+
+Autor del conjunto de datos
+IBM Cognos Analytics
+
+Contexto
+Datos de 7043 clientes de una empresa de telecomunicaciones ficticia de California que proporcionó servicios de telefonía e internet en el tercer trimestre del año.
+
+Descripción de las variables
+customerID : Un ID único que identifica a cada cliente.
+gender: Género del cliente: Masculino, Femenino
+SeniorCitizen: Indica si el cliente tiene mas de 65 años: Si, No
+Partner: Indica si el cliente tiene pareja: Si, No
+Dependents: Indica si el cliente vive con alguna persona dependiente: Si, No. Las personas dependientes pueden ser hijos, personas ancianas, etc.
+tenure: Indica la cantidad de meses que el cliente ha permanecido en la empresa al final del tercer trimestre del año.
+PhoneService: Indica si el cliente se suscribe al servicio telefónico de la empresa: Si, No
+MultipleLines: Indica si el cliente se suscribe a varias lineas telefónicas con la empresa: Si, No, Sin servicio telefónico
+InternetService: Indica si el cliente se suscribe al servicio de internet de la empresa: DSL, Fibra óptica, No
+OnlineSecurity: Indica si el cliente se suscribe al servicio adicional de seguridad en línea proporcionado por la empresa: Si, No, Sin servicio de internet
+OnlineBackup: Indica si el cliente se suscribe al servicio adicional de copia de seguridad en línea proporcionado por la empresa: Si, No, Sin servicio de internet
+DeviceProtection: Indica si el cliente se suscribe al servicio adicional de protección de dispositivos proporcionado por la empresa: Si, No, Sin servicio de internet
+TechSupport: Indica si el cliente se suscribe al servicio adicional de soporte técnico proporcionado por la empresa: Si, No, Sin servicio de internet
+StreamingTV: Indica si el cliente utiliza su servicio de internet para transmitir programas de televisión de un proveedor externo: Si, No, Sin servicio de internet.
+La empresa no cobra una tarifa adicional por este servicio.
+StreamingMovies: Indica si el cliente utiliza su servicio de internet para transmitir películas de un proveedor externo: Si, No, Sin servicio de internet.
+La empresa no cobra una tarifa adicional por este servicio.
+Contract: Indica el contrato actual del cliente: Mes a mes, Un año, Dos años
+PaperlessBilling: Indica si el cliente ha elegido facturación electronica: Si, No
+PaymentMethod: Indica cómo paga el cliente su factura: Cheque electrónico, Cheque enviado por correo, Transferencia bancaria, Tarjeta de crédito 
+MonthlyCharges: Indica el monto mensual a pagar por el cliente por todos los servicios adquiridos de la empresa.
+TotalCharges: Indica el monto total que pagó el cliente al final del trimestre por todos los servicios adquiridos de la empresa.
+Churn: Indica si el cliente abandonó los servicios de la empresa: Si, No
