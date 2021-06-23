@@ -183,3 +183,486 @@ data.isnull().sum().sum()
 data.isnull().sum()
 
 # Y efectivamente, los métodos utilizados imputaron de forma satisfactoria los valores faltantes.
+
+
+#------------------------------------------------------------------------------------------------
+#                                ANÁLISIS Y VISUALIZACIÓN DE DATOS
+#------------------------------------------------------------------------------------------------
+
+# Empezaremos la sección formulando algunas hipótesis que seran respondidas mediante el proceso
+# de análisis de los datos
+
+# H1: ¿El género del cliente propicia la deserción de los servicios de la empresa?
+# H2: ¿Son los clientes de la tercera edad mas propensos a desertar?
+# H3: ¿Los clientes sin pareja son mas propensos a permanecer en la empresa?
+# H4: ¿Si el cliente no vive con personas dependientes tiene mas probabilidades de abandonar la empresa?
+# H5: ¿Es más probable que los clientes que no tienen servicio telefónico abandonen la empresa?
+# H6: ¿Los clientes con múltiples lineas telefónicas son más propensos a permanecer en la empresa?
+# H7: ¿Es más probable que los clientes abandonen la empresa si no tienen conexión a internet?
+# H8: ¿Los clientes sin servicio de seguridad en línea tienden a abandonar la empresa?
+# H9: ¿Los clientes sin servicio de copia de seguridad en línea tienden a abandonar la empresa?
+# H10: ¿Los clientes sin servicio de protección de dispositivos tienden a abandonar la empresa?
+# H11: ¿Los clientes sin servicio de soporte técnico tienden a abandonar la empresa?
+# H12: ¿Los clientes sin servicio de transmisión televisiva tienden a abandonar la empresa?
+# H13: ¿Los clientes sin servicio de transmisión de películas tienden a abandonar la empresa?
+# H14: ¿Los clientes con mayor cantidad de meses en la empresa son más propensos a seguir permaneciendo en ella?
+# H15: ¿Los clientes con poca cantidad de dinero mensual a pagar son más propensos a permanecer en la empresa?
+# H16: ¿Los clientes con poca cantidad de dinero total a pagar son más propensos a permanecer en la empresa?
+# H17: ¿El el tipo de contrato elegido por el cliente un factor que indique su deserción de la empresa?
+# H18: ¿Los clientes que eligen facturación electrónica son más propensos a abandonar la empresa?
+# H19: ¿Existe algún metodo de pago en particular preferido por los clientes desertores?
+
+
+# Visualizaremos la distribución de los datos respecto a cada uno de los tres conjuntos de
+# variables que se han identificado: Variables de información del cliente - Variables de servicio
+# - Variables de contrato. Esta segmentación nos permitirá realizar un análisis mas ordenado e
+# identificar patrones e información util para entender nuestros datos.
+
+# Variables de información del cliente
+
+fig, ax = plt.subplots(2, 2, figsize=(16, 8))
+sns.countplot(data=data, x="gender", ax=ax[0,0])
+sns.countplot(data=data, x="SeniorCitizen", ax=ax[0,1])
+sns.countplot(data=data, x="Partner", ax=ax[1,0])
+sns.countplot(data=data, x="Dependents", ax=ax[1,1])
+fig.suptitle('Distribución de las variables de información del cliente', fontsize=16)
+plt.show()
+
+# Observamos que tenemos una distribución equitativa en nuestras variables "gender" y 
+# "Partner", lo cual nos indica que ningún género predomina sobre el otro en la empresa, a la 
+# vez que hay tantas personas con pareja como sin pareja.
+
+# Por otro lado observamos que predominan más las personas menores de 65 años, y que la
+# mayoría de ellos no viven con personas dependientes.
+
+
+# Variables de servicio
+
+fig, ax = plt.subplots(3, 3, figsize=(16, 12))
+sns.countplot(data=data, x="PhoneService", ax=ax[0,0])
+sns.countplot(data=data, x="MultipleLines", ax=ax[0,1])
+sns.countplot(data=data, x="InternetService", ax=ax[0,2])
+sns.countplot(data=data, x="OnlineSecurity", ax=ax[1,0])
+sns.countplot(data=data, x="OnlineBackup", ax=ax[1,1])
+sns.countplot(data=data, x="DeviceProtection", ax=ax[1,2])
+sns.countplot(data=data, x="TechSupport", ax=ax[2,0])
+sns.countplot(data=data, x="StreamingTV", ax=ax[2,1])
+sns.countplot(data=data, x="StreamingMovies", ax=ax[2,2])
+fig.suptitle('Distribución de las variables de servicio', fontsize=16)
+plt.show()
+
+# De los resultados obtenimos podemos indicar lo siguiente:
+
+# Existe una inmensa mayoría de clientes que han adquirido los servicios de telefonía de la
+# empresa, lo cual nos indica que es el servicio más demandado y básico que ofrece la
+# compañía.
+
+# Hay una distribución relativamente equitativa entre el número de clientes que tiene múltiples
+# líneas y no, lo cual es común puesto que es un servicio opcional.
+
+# La mayoria de los usuarios prefiere una conexión de fibra óptica como servicio de internet,
+# ya que esta es mucho más rápida y de calidad que otros tipos de conexión convencionales.
+
+# Observamos una tendencia de los usuarios a no contar con los servicios de seguridad
+# que ofrece la empresa, podemos suponer múltiples razones, desde una mala calidad en estos
+# servicios hasta costos elevados en la mensualidad por adquirirlos.
+
+# Por último, observamos que existe una ligera diferencia entre la cantidad de clientes que eligen
+# adquirir servicios de transmisión de TV a través de su servicio de internet y los que no lo
+# hacen.
+
+
+# Variables de contrato
+
+fig, ax = plt.subplots(1, 3, figsize=(16, 4))
+sns.histplot(data=data, x="tenure", kde=True, ax=ax[0])
+sns.histplot(data=data, x="MonthlyCharges", kde=True, ax=ax[1])
+sns.histplot(data=data, x="TotalCharges", kde=True, ax=ax[2])
+fig.suptitle('Distribución de las variables de contrato', fontsize=16)
+
+# De estos resultados se extrae la siguiente información:
+    
+# Existen dos grandes picos en la distribución que muestra la cantidad de meses que el cliente
+# a permanecido en la empresa al finalizar el trimestre, siendo estos los que han permanecido en
+# un rango menor a 5 meses, y los que han permanecido en un rango mayor a 65 meses, lo que significa
+# que la empresa cuenta con tantos clientes fieles como nuevos en la adquisición de sus servicios.
+
+# Por otra parte, observamos que la variable de los cargos mensuales "MonthlyCharges" presenta
+# 3 picos notables, siendo el mayor de estos los que tienen cargos mensuales alrededor de
+# 20 dólares, seguido de otro con alrededor de 80 dólares, y por ultimo, uno con alrededor de
+# 50 dólares. Esto quiere decir que tenemos una cantidad considerable de clientes que
+# prefieren los contratos con poca mensualidad a pagar (los cuales probablemente
+# incluyan menos servicios). 
+
+# La variable de los cargos totales "TotalCharges" presenta una distribución de cola en donde
+# el único pico que presenta es en los cargos con poca cantidad de dólares a pagar por los
+# clientes, lo cual guarda relación con los anteriores gráficos donde vimos que existe una
+# gran cantidad de clientes con pocos meses en la empresa y con cargos mensuales bajos.
+
+fig, ax = plt.subplots(1, 2, figsize=(16, 4))
+sns.countplot(data=data, x="Contract", ax=ax[0])
+sns.countplot(data=data, x="PaperlessBilling", ax=ax[1])
+fig, ax = plt.subplots(1, 1, figsize=(16, 4))
+sns.countplot(data=data, y="PaymentMethod")
+plt.show()
+
+# Observamos que el contrato preferido por los clientes es el de "Month to month", el cual es el
+# más corto de todos, lo cual guarda cierta relación con el gráfico anterior donde vimos que había
+# una gran cantidad de clientes con pocos meses de permanencia en la empresa.
+
+# Por otra parte, observamos que los usuarios de la empresa mayormente prefieren facturación
+# electronica.
+
+# Por ultimo, observamos que la mayoría de clientes prefiere el método de pago con cheque
+# electrónico, la distribución de los demas metodos se mantiene de forma equitativa entre ellos.
+
+# En base a todo lo anterior visto, procederemos a responder las hipótesis que inicialmente
+# habíamos planteado, esto lo lograremos mediante un análisis bivariado de nuestras variables de
+# entrada con nuestra variable de salida.
+
+
+# Variables de información del cliente vs "Churn"
+
+fig, ax = plt.subplots(2, 2, figsize=(16, 8))
+
+sns.countplot(data=data, x="gender", ax=ax[0,0], hue=data.Churn)
+sns.countplot(data=data, x="SeniorCitizen", ax=ax[0,1], hue=data.Churn)
+sns.countplot(data=data, x="Partner", ax=ax[1,0], hue=data.Churn)
+sns.countplot(data=data, x="Dependents", ax=ax[1,1], hue=data.Churn)
+fig.suptitle('Variables de información del cliente vs Churn', fontsize=16)
+plt.show()
+
+# Observamos que tanto el número de desertores en el género masculino es el mismo que en el
+# género femenino, por lo tanto se puede decir que esta variable no influye en la deserción
+# de clientes de la empresa
+
+# Sin embargo, en el gráfico de la variable "SeniorCitizen", observamos que los clientes que no
+# son de la tercera edad (mayor a 65 años) son menos propensas a abandonar los servicios de la
+# empresa, en comparación con las personas que si cumplen con esta franja de edad, las cuales
+# tienen una distribución mas equilibrada. Por lo tanto, se puede decir que esta variable influye
+# en cierta medida a la deserción de clientes.
+
+# Del gráfico de la variable "Partner" podemos deducir que los clientes que no tienen pareja son
+# ligeramente más propensos a abandonar los servicios de la empresa.
+
+# Y por último, de la gráfica de la variable "Dependents" podemos observar que los clientes que no
+# viven con personas dependientes tienen más probabilidades de abandonar los servicios de la
+# empresa, por ende, es una variable influyente en la deserción de usuarios.
+
+# Resumiendo toda la información obtenida tenemos que: Tanto hombres como mujeres tienen la misma
+# probabilidad de deserción, si estas personas son mayores de 65 años, esta probabilidad aumenta.
+# Y el hecho que no tengan pareja y que no vivan con personas dependientes aumenta en cierta forma
+# sus probabilidades de abandonar los servicios de la empresa.
+
+# Respondiendo a las hipótesis tenemos que:
+# H1: El género del cliente no afecta de ninguna forma en la deserción de los servicios de la empresa.
+# H2: Los clientes de la tercera edad son más propensos a ser desertores comparados con los que no pasan esta franja de edad
+# H3: Los clientes sin pareja tienen ligeramente mas probabilidades de desertar que aquellos que sí tienen
+# H4: Los clientes que no viven con personas dependientes tienen más probabilidades de abandonar la empresa
+
+
+# Variables de servicio vs "Churn"
+
+fig, ax = plt.subplots(3, 3, figsize=(16, 12))
+sns.countplot(data=data, x="PhoneService", ax=ax[0,0], hue=data["Churn"])
+sns.countplot(data=data, x="MultipleLines", ax=ax[0,1], hue=data["Churn"])
+sns.countplot(data=data, x="InternetService", ax=ax[0,2], hue=data["Churn"])
+sns.countplot(data=data, x="OnlineSecurity", ax=ax[1,0], hue=data["Churn"])
+sns.countplot(data=data, x="OnlineBackup", ax=ax[1,1], hue=data["Churn"])
+sns.countplot(data=data, x="DeviceProtection", ax=ax[1,2], hue=data["Churn"])
+sns.countplot(data=data, x="TechSupport", ax=ax[2,0], hue=data["Churn"])
+sns.countplot(data=data, x="StreamingTV", ax=ax[2,1], hue=data["Churn"])
+sns.countplot(data=data, x="StreamingMovies", ax=ax[2,2], hue=data["Churn"])
+fig.suptitle('Variables de servicio vs Churn', fontsize=16)
+plt.show()
+
+# Para nuestra variable "PhoneService" no observamos relación alguna con la deserción de
+# clientes, ya que ambas proporciones de abandonos en el caso de tener o no servicio 
+# telefónico se reparte de forma equitativa respecto al total de muestras.
+
+# El mismo patrón se observa en la variable "MultipleLines", aunque es ligeramente más probable
+# abandonar si el cliente cuenta con múltiples lineas de telefonía.
+
+# En el caso de la variable "InternetService" observamos claramente que existe una alta
+# probabilidad de desertar los servicios de la empresa si el usuario tiene un servicio de
+# internet de fibra óptica.
+
+# Lo mismo sucede en las variables "OnlineSecurity", "OnlineBackup", "DeviceProtection" y
+# "TechSupport", donde es mucho más probable encontrar abandono de usuarios si estos no cuentan
+# con los servicios mencionados, el cual es un comportamiento interesante ya que todos estos
+# servicios están asociados a la seguridad y protección de red y dispositivos, y dependen únicamente
+# si el cliente cuenta con servicio de internet o no.
+
+# Por último, de las gráficas respecto a las variables "StreamingTV" y "StreamingMovies" tenemos
+# una probabilidad similar de desertar si el usuario cuenta o no con estos servicios, y si no tiene
+# servicio de internet, esta probabilidad desciende en gran medida
+
+# Resumiendo toda la informacion obtenida tenemos que: Contar con servicio telefónico o no,
+# no afecta en la deserción de clientes, sin embargo el contar con múltiples líneas telefónicas
+# puede llegar a afectar ligeramente esta probabilidad. Si el usuario tiene servicio de
+# internet de fibra óptica, las probabilidades de desertar aumentan exponencialmente, y si a
+# esto lo sumamos no adquirir ninguno de los servicios de protección y seguridad como
+# ("OnlineSecurity", "OnlineBackup", "DeviceProtection", y "TechSupport") esta probabilidad
+# aumenta aun más, por ende podemos deducir que existe un problema grave en los servicios de
+# fibra óptica y los servicios de seguridad que brinda la empresa. Por último, podemos
+# decir que el cliente tiene igual probabilidad de desertar en el caso que adquiera o no adquiera
+# servicios de transmisión televisiva o de películas, y si no tiene servicios de internet, esta
+# probabilidad disminuye en gran medida.
+
+# Respondiendo a las hipótesis tenemos que:
+# H5: El contar o no con servicio telefónico no influye en la deserción de clientes en la empresa
+# H6: Los clientes con múltiples líneas telefónicas son ligeramente mas probables a desertar
+# H7: Es muy probable que los clientes abandonen la empresa si estos cuentan con internet de fibra óptica
+# H8: Los clientes sin servicio de seguridad en línea tienden a abandonar la empresa
+# H9: Los clientes sin servicio de copia de seguridad en linea tienden a abandonar la empresa
+# H10: Los clientes sin servicio de protección de dispositivos tienden a abandonar la empresa
+# H11: Los clientes sin servicio de soporte técnico tienden a abandonar la empresa
+# H12: Los clientes sin servicio de transmisión televisiva tienen similar probabilidad de desertar en comparación
+# con los que si cuentan con este servicio
+# H13: Los clientes sin servicio de transmisión de películas tienen similar probabilidad de desertar en comparacion
+# con los que si cuentan con este servicio
+
+
+# Variables de contrato vs "Churn"
+
+fig, axs = plt.subplots(1, 3, figsize=(16, 4))
+sns.histplot(data=data, x="tenure", kde=True, ax=axs[0], hue=data.Churn)
+sns.histplot(data=data, x="MonthlyCharges", kde=True, ax=axs[1], hue=data.Churn)
+sns.histplot(data=data, x="TotalCharges", kde=True, ax=axs[2], hue=data.Churn)
+fig.suptitle('Variables de servicio vs Churn', fontsize=16)
+plt.show()
+
+# En primer lugar observamos que existe una relación entre nuestra variable "tenure" (número de
+# meses que el cliente permaneció en la empresa) con la deserción del cliente, ya que el histograma
+# deja en clara evidencia que los usuarios que menos meses permanecieron se dividen de forma
+# equitativa en usuarios desertores y no desertores, y que mientras más meses permanezcan en
+# la empresa, menos probabilidades tendran de desertar y más probabilidades tendran de quedarse.
+
+# En el caso de la variable "MonthlyCharges", podemos observar que un aumento del costo
+# mensual a pagar por el cliente provocará un leve aumento en las probabilidades de desertar,
+# a la vez que también observamos que los clientes con poca cantidad mensual a pagar son los
+# que indudablemente permanecen en la empresa.
+
+# Por último, para el caso de "TotalCharges", tenemos un comportamiento similar entre los
+# clientes que desertaron y no desertaron, ya que podemos observar que si el monto total a pagar
+# es pequeño, las probabilidades de desertar o quedarse son similares, por otra parte, mientras
+# mayor sea este monto, menor sera la probabilidad de abandonar (para los clientes
+# que desertaron) y no abandonar (para los clientes que no desertaron) los servicios de la
+# empresa
+
+# Resumiendo toda la información obtenedia tenemos que: Existe una distribución equitativa
+# entre los clientes que desertaron y no desertaron cuando estos tienen pocos meses afiliados
+# a la empresa, y que mientras mayor sea la cantidad de meses que permanecen en esta, mayor será
+# su probabilidad de quedarse, a la vez que tambien observamos una leve relación entre el aumento
+# de la mensualidad a pagar de los clientes y el abandono de estos, ya que mientras mayor sea
+# el monto, mayores probabilidades hay de desertar. Por último tenemos que en los montos totales
+# con menor valor monetario hay una probabilidad casi equitativa de desertar o no de los servicios
+# de la empresa, y que esto se relaciona con los meses de permanencia en la empresa("tenure"), ya
+# que si un cliente pasa menos tiempo afiliado a la empresa, es de esperarse que su monto total
+# a pagar sea igual de bajo como el tiempo que paso afiliado.
+
+# Respondiendo a las hipótesis tenemos que:
+# H14: Los clientes con mayor número de meses en la empresa tienden a permancer más tiempo en ella
+# H15: Los clientes con poca cantidad de dinero mensual a pagar son más propensos a permanecer en la empresa
+# H16: Los clientes con poca cantidad de dinero total a pagar son igualmente propensos a abandonar como permanecer en la empresa
+
+
+fig, axs = plt.subplots(1, 2, figsize=(16, 4))
+sns.countplot(data=data, x="Contract", ax=axs[0], hue=data.Churn)
+sns.countplot(data=data, x="PaperlessBilling", ax=axs[1], hue=data.Churn)
+fig.suptitle('Variables de servicio vs Churn', fontsize=16)
+fig, axs = plt.subplots(1, 1, figsize=(16, 4))
+sns.countplot(data=data, x="PaymentMethod", hue=data.Churn)
+plt.show()
+
+# Se puede observar que las probabilidades de deserción de un cliente aumentan en gran medida
+# si este tiene un contrato corto de mes a mes, y que los clientes desertores rara vez escogen
+# contratos largos como los de un año o dos años.
+
+# La facturacion electrónica es una variable que influye ligeramente en la deserción de los clientes
+# ya que podemos ver que los usuarios que escogen este tipo de documento tienen un mayor número
+# de desertores comparado con los que no escogen esto.
+
+# Por último, tenemos que los clientes que escogen el cheque electrónico como método de pago 
+# son mas propensos a abandonar los servicios de la empresa, mientras que los clientes que
+# escogen otros métodos como los automaticos o los enviados por correo electroncio tienden a
+# no desertar
+
+# Resumiendo toda la información obtenedia tenemos que: Los contratos cortos son los preferidos
+# de los usuarios que no estan seguros si los servicios que brinda la empresa cumpliran sus
+# expectativas, y por ende, son los que mas probabilidad tienen de desertar, al igual que
+# el documento y método de pago preferido por este tipo de clientes es el cheque electrónico y
+# la facturación electrónica.
+
+# Respondiendo a las hipótesis tenemos que:
+# H17: El tipo de contrato elegido ayuda a determinar si un cliente es propenso a desertar o no, ya
+# que en la mayoría de ocaciones estos eligen contratos mes a mes.
+# H18: Los clientes que eligen facturación electrónica son ligeramente mas propensos a abandonar la empresa
+# H19: Los clientes desertores en la mayoría de ocaciones eligen el cheque electrónico como metodo de pago.
+
+
+# A lo largo de este proceso de análisis nos hemos encontrado con un patrón repetitivo en los
+# clientes desertores, el cual consiste en no tener los servicios basados en la seguridad de red
+# y dispositivos, y que estos en su gran mayoría provenian de usuarios con servicio de internet
+# y especificamente con conexión de fibra óptica, es por ello que nos proponemos a identificar
+# la combinación de servicios que mayor abandono y mayor permanencia de clientes tienen para poder
+# observar que cantidad de servicios adquiridos y que tipo de servicios en particular son los
+# que propician la deserción y la permanencia de cliente en la empresa.
+
+
+#-----------------------------
+# ¿Que combinación de servicios propicia el abandono de clientes?
+#-----------------------------
+
+# Creamos un nuevo conjunto de datos en la que codificaremos numéricamente la variable "Churn"
+# para poder construir una tabla de pivotaje que cuente los valores positivos de esta variable
+churn_dummy = pd.get_dummies(data, columns=["Churn"])
+
+# Identificamos que combinación de servicios tiene más deserción en base a la variable "PhoneService"
+mayor_aban = pd.pivot_table(churn_dummy,index=["PhoneService"], columns=["InternetService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies"],
+                            values=["Churn_Yes"],aggfunc=lambda x: x.sum() if x.sum() > 70 else np.nan)
+
+mayor_aban.plot(kind="bar" )
+plt.title("Combinaciones de servicios con mayor cantidad de abandonos de clientes", y=1.09)
+plt.suptitle("InternetService | MultipleLines | OnlineSecurity | OnlineBackup | DeviceProtection | TechSupport | StreamingTV | StreamingMovies", y=0.93)
+plt.yticks([0,40,80,120,160,190])
+plt.xticks(rotation=0)
+plt.xlabel('')
+plt.legend('',frameon=False)
+plt.text(0.245, 0.87, 'DSL|No|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.42, 0.59, 'FO|Yes|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.585, 0.41, 'FO|Yes|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
+ax = plt.gca()
+ax.grid(alpha=0.5, axis="y")
+ax.set_axisbelow(True)
+
+# Del gráfico mostrado identificamos que las combinaciones que mas desersión tienen son las que
+# incluyen menos servicios del catálogo que ofrece la empresa, estos clientes solo cuentan con
+# servicio de telefonía e internet, sin embargo, no adquieren los servicios complementarios al de
+# internet, como vendrian a ser "TechSupport", "DeviceProtection", "OnlineBackup" y "OnlineSecurity"
+# como ya habiamos visto previamente en análisis anteriores, lo cual nos da a entender que si el
+# cliente cuenta con servicios de conexión a internet pero no con sus complementarios, entonces
+# hay una mayor probabilidad de que estos en un futuro deserten, puesto que los consideran importantes
+# y que hay algún motivo que esta impidiendo que los adquieran, el cual podría ser el factor económico.
+
+
+#---------------------------------
+# ¿Que combinación de servicios propician la permanencia de clientes?
+#---------------------------------
+
+mayor_perm = pd.pivot_table(churn_dummy,index=["PhoneService"], columns=["InternetService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies"],
+                            values=["Churn_No"],aggfunc=lambda x: x.sum() if x.sum() > 112 else np.nan)
+
+mayor_perm.plot(kind="bar" )
+plt.title("Combinaciones de servicios con mayor cantidad de permanencia de clientes", y=1.09)
+plt.suptitle("InternetService | MultipleLines | OnlineSecurity | OnlineBackup | DeviceProtection | TechSupport | StreamingTV | StreamingMovies", y=0.93)
+plt.yticks([0,100,300,500,700,900])
+plt.xticks(rotation=0)
+plt.xlabel('Internet Service')
+plt.legend('',frameon=False)
+plt.text(0.25, 0.9, 'No|No|NoIS|NoIS|NoIS|NoIS|NoIS|NoIS', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.50, 0.27, 'No|Yes|NoIS|NoIS|NoIS|NoIS|NoIS|NoIS', verticalalignment='center', transform=ax.transAxes)
+ax = plt.gca()
+ax.grid(alpha=0.5, axis="y")
+ax.set_axisbelow(True)
+
+# De este gráfico observamos un patrón interesante, ya que los clientes que tienen mayor permanencia
+# en la empresa son en su gran mayoría los que solo cuentan con servicio telefónico, estos clientes
+# en comparación con la combinación que mayor propicia la deserción no cuentan con servicio de
+# internet, por lo tanto no se ven afectados al no tener los servicios complementarios
+# que derivan de este, lo que causa que sus probabilidades de desertar disminuyan y sean mas
+# propensos a permanecer en la empresa.
+
+# Entonces podemos concluir que nuestra variable "InternetService" es un factor muy importante al
+# momento de determinar si un cliente abandona o permanece con los servicios de la empresa, ya que
+# condiciona el comportamiento de las demás variables de servicio y su adquisición sin los servicios
+# complementarios que derivan de él propician la desercion de los usuarios. 
+
+
+# Para terminar con esta sección, graficaremos una matriz de correlación para identificar el
+# comportamiento conjunto de nuestras variables sobre otras, como estamos tratando tanto con
+# variables categóricas como numéricas, sera necesario primero codificar las variables categóricas para
+# poder graficar de forma correcta la matriz de correlación.
+
+data_corr = pd.get_dummies(data, columns = ["gender","SeniorCitizen","Partner","Dependents",
+                                            "PhoneService","MultipleLines","InternetService",
+                                            "OnlineSecurity","OnlineBackup","DeviceProtection",
+                                            "TechSupport","StreamingTV","StreamingMovies",
+                                            "Contract","PaperlessBilling","PaymentMethod","Churn"])
+
+# Eliminamos una columna en cada una de nuestras variables dicotómicas para evitar la redundancia
+data_corr = data_corr.drop(["gender_Female", "SeniorCitizen_0.0", "Partner_No","Dependents_No",
+                     "PhoneService_No", "PaperlessBilling_No", "Churn_No"], axis=1)
+
+# Debido a que contamos con muchas variables sera necesario dividir nuestro conjunto de datos y
+# graficar la matriz de correlación en base a cada una de las divisiones para poder apreciar mejor
+# la gráfica.
+
+data_corr_1 = data_corr[["tenure","MonthlyCharges","TotalCharges","gender_Male","SeniorCitizen_1.0",
+                        "Partner_Yes","Dependents_Yes","PhoneService_Yes","MultipleLines_No",
+                        "MultipleLines_No phone service","MultipleLines_Yes","Churn_Yes"]]
+data_corr_2 = data_corr.iloc[:,11:41]
+
+# Matriz de correlación para el primer conjunto
+plt.figure(figsize=(30, 20))
+corr = data_corr_1.corr()
+mask = np.triu(np.ones_like(corr, dtype=bool))
+ax = sns.heatmap(corr, mask=mask, xticklabels=corr.columns, yticklabels=corr.columns, annot=True, linewidths=.2, cmap='coolwarm', vmin=-1, vmax=1)
+
+# Matriz de correlación para el segundo conjunto
+plt.figure(figsize=(30, 20))
+corr = data_corr_2.corr()
+mask = np.triu(np.ones_like(corr, dtype=bool))
+ax = sns.heatmap(corr, mask=mask, xticklabels=corr.columns, yticklabels=corr.columns, annot=True, linewidths=.2, cmap='coolwarm', vmin=-1, vmax=1)
+
+# Identificamos la existencia de una gran correlación entre las variables que estan asociadas
+# a los servicios que ofrece la empresa, siendo las mas influyentes y recurrentes aquellas 
+# relacionadas con "InternetService".
+
+# A continuacion, visualizaremos algunas de las correlaciones mas altas y bajas mediante un gráfico de
+# barras, puesto que estamos tratando en su mayoría con variables categóricas y no numéricas.
+
+#-------
+# "StreamingTV" vs "StreamingMovies"
+STV_SMOV=pd.crosstab(index=data['StreamingTV'],columns=data['StreamingMovies'])
+STV_SMOV.plot.bar(figsize=(7,4), rot=0)
+
+# Observamos que las variables "StreamingTV" y "StreamingMovies" estan correlacionadas
+# positivamente, especialmente en la clase "No internet service" como nos muestra nuestra tabla
+# de correlaciones, puesto que para cada clase de la variable "StreamingTV", la variable "StreamingMovies"
+# se comportará en gran medida de la misma manera, es decir, si el cliente no cuenta con servicio
+# de transmisión de TV, con mucha frecuencia tampoco contara con servicio de transmisión de películas,
+# y este mismo patrón se repite en las demas clases.
+# Este comportamiento se puede explicar de la siguiente forma: Si un usuario no esta interesado
+# en usar su servicio de internet para adquirir servicios de transmisión televisiva, es muy
+# probable que tampoco este interesado en adquirir servicios de transmisión de películas, puesto
+# que sus gustos no se centran en este tipo de entretenimiento, el mismo comportamiento se aplica
+# si el cliente si adquiere servicios televisivos, sin embargo, en el caso de no contar con servicio
+# de internet, no existen alternativas que el cliente pueda elegir.
+
+#-------
+# "DeviceProtection" vs "TechSupport"
+DP_TS=pd.crosstab(index=data['DeviceProtection'],columns=data['TechSupport'])
+DP_TS.plot.bar(figsize=(7,4), rot=0)
+
+# Un patron similar observamos en estas variables, con la diferencia que la última clase de la
+# variable "DeviceProtection" tiene una distribución mas balanceada, sin embargo, aun posee
+# correlación con "TechSupport", ya que sigue influenciando en su comportamiento. 
+# La razon de este comportamiento sigue siendo el mismo que el del gráfico anterior.
+
+#-------
+# "OnlineSecurity" vs "TechSupport"
+OS_TS=pd.crosstab(index=data['OnlineSecurity'],columns=data['TechSupport'])
+OS_TS.plot.bar(figsize=(7,4), rot=0)
+
+# Y lo mismo observamos al comparar "DeviceProtection" vs "TechSupport", en donde se aprecia
+# correlación positiva e igual interpretacion de comportamiento.
+
+#-------
+# "MultipleLines" vs "PhoneService"
+ML_PS=pd.crosstab(index=data['MultipleLines'],columns=data['PhoneService'])
+ML_PS.plot.bar(figsize=(7,4), rot=0)
+
+# Por último, observamos una correlación altamente negativa entre ambas variables, puesto que
+# "MultipleLines" tiende a adquirir un valor de "No" cuando "PhoneService" adquiere un valor de
+# "Yes", condicionando en forma inversa su valor.
