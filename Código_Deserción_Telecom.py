@@ -666,3 +666,194 @@ ML_PS.plot.bar(figsize=(7,4), rot=0)
 # Por último, observamos una correlación altamente negativa entre ambas variables, puesto que
 # "MultipleLines" tiende a adquirir un valor de "No" cuando "PhoneService" adquiere un valor de
 # "Yes", condicionando en forma inversa su valor.
+
+
+#--------------------------------------------------------------------------------------------
+#                                   TRANSFORMACIÓN DE DATOS
+#--------------------------------------------------------------------------------------------
+
+# Antes de empezar con la verificación e implementación de técnicas para la transformación de
+# datos, empezaremos codificando nuestras variables categóricas a numéricas, puesto que es un
+# paso necesario para que los algoritmos de aprendizaje automático puedan aprender correctamente
+# de los datos.
+
+data_cod = data.copy()
+encoder = LabelEncoder()
+data_cod["Churn"] = encoder.fit_transform(data_cod["Churn"])
+
+data_cod = pd.get_dummies(data_cod, columns=["gender","SeniorCitizen","Partner","Dependents",
+                                             "PhoneService","MultipleLines","InternetService",
+                                             "OnlineSecurity","OnlineBackup","DeviceProtection",
+                                             "TechSupport","StreamingTV","StreamingMovies",
+                                             "Contract","PaperlessBilling","PaymentMethod"])
+
+# Eliminamos una columna en cada una de nuestras variables dicotómicas para evitar la redundancia
+data_cod = data_cod.drop(["gender_Female","SeniorCitizen_0.0","Partner_No","Dependents_No",
+                          "PhoneService_No","PaperlessBilling_No"], axis=1)
+
+# Posterior a ello segmentaremos la totalidad de nuestros datos en dos conjuntos: variables
+# de entrada (X) y variable de salida (y). Para después volver a dividir estos conjuntos
+# en: datos de entrenamiento (X_train, y_train) y datos de validación (X_test, y_test).
+# Esta división nos ayudara a evitar un problema conocido como "fuga de datos", el 
+# cual es causado al realizar transformaciones en la totalidad de los datos o incluir
+# información en la fase de entrenamiento del modelo que no se esperaría que estuviese
+# disponible al momento de realizar una predicción con datos no antes visto, lo cual provoca
+# que no tengamos recursos al momento de querer validar nuestro modelo o que las métricas
+# de evaluación arrojen falsos resultados.
+
+# Conjunto de variables de entrada y salida
+X = data_cod.drop(["Churn"], axis=1)
+X = X.iloc[: , :].values
+y = data_cod.iloc[: , 3].values
+
+# Conjunto de entrenamiento y evaluación
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=21)
+
+# Una vez realizados todos estos pasos, estamos listos para empezar con la implementación de
+# técnicas para la transformación de datos.
+
+
+# REBALANCEO DE DATOS
+#--------------------
+
+# Empezaremos comprobando el número de muestras para cada una de las clases que tiene nuestra
+# variable de salida para identificar si tenemos un conjunto de datos desbalanceado.
+
+sns.countplot(data=data_cod, x="Churn")
+
+from collections import Counter
+counter_total = Counter(data_cod["Churn"])
+print(counter_total)
+
+# Efectivamente notamos que existe una diferencia notable en el número de datos clasificados a
+# cada clase, en este caso, nuestra clase minoritaria vendria a ser "1" (clientes desertores),
+# el cual es aproximandamente 5 veces menor a nuestra clase mayoritaria "0" (clientes no desertores).
+
+# Las consecuencias de tener datos desbalanceados se dan a relucir cuando el modelo de predicción
+# que utilizemos tenga un rendimiento deficiente al momento de predecir datos catalogados con la
+# clase minoritaria, y buenas predicciones hacia datos de la clase mayoritaria, puesto que estará
+# sesgado hacia la clase que mayor presencia tiene en el conjunto de datos, lo cual no es el
+# resultado que esperamos.
+
+# Existen diversas técnicas para solucionar este problema, como el sobremuestreo (creación de
+# nuevas muestras sintéticas en la clase minoritaria para igualar la cantidad de muestras de la
+# clase mayoritaria), submuestreo (reducción de la cantidad de muestras de la clase mayoritaria
+# para igualar la cantidad de muestras de la clase minoritaria), modelos híbridos(aplica ambas
+# técnicas mencionadas), entre otros.
+
+# En este caso, debido a que en nuestro conjunto de datos tenemos variables categóricas y
+# numéricas, haremos uso del sobremuestreo, siendo mas especificos, utilizaremos la técnica
+# SMOTE-NC, la cual está basada en el algoritmo de aprendizaje automatico KNN, el cual
+# utilizará la distancia euclidiana para generar nuevos datos que mayor se ajusten a la
+# realidad a partir de los que ya tenemos.
+
+# Como anteriormente habíamos explicado, para evitar sufrir de fuga de datos implementaremos
+# la técnica SMOTE-NC solo en nuestros conjuntos de entrenamiento, dejando intactos los de
+# evaluación, ya que es recomendable que estos esten íntegros para obtener resultados confiables
+# en las métricas que evalúen nuestro modelo.
+
+#--------
+# Antes del rebalanceo
+
+# Número de muestras para cada clase en el conjunto de entrenamiento antes del rebalanceo
+counter_before = Counter(y_train)
+print(counter_before)
+print(y_train.shape)
+plt.bar(counter_before.keys(), counter_before.values())
+
+#--------
+# Después del rebalanceo
+
+# Lista que almacenará la posición de nuestras variables categóricas en el conjunto de datos
+categoricas = []  
+for i in range(3,40):
+    categoricas.append(i)
+    
+# Inicializamos y ejecutamos la técnica SMOTE-NC
+smnc = SMOTENC(categorical_features= categoricas, random_state=21)
+X_train, y_train = smnc.fit_resample(X_train, y_train)
+
+# Número de muestras para cada clase en el conjunto de entrenamiento después del rebalanceo
+counter_after = Counter(y_train)
+print(counter_after)
+print(y_train.shape)
+plt.bar(counter_after.keys(), counter_after.values())
+
+# Podemos observar que ahora el número de muestras para cada clase en nuestros datos de entrenamiento
+# están perfectamente balanceados los unos de los otros, por ende, habremos alivianado en cierta
+# medida el problema de los datos desbalanceados y el sesgo hacia la clase mayoritaria.
+
+
+# REDUCCIÓN DE LA DIMENSIONALIDAD
+#--------------------------------
+
+# Debido a que tenemos muchas variables de entrada nos vemos en la necesidad de reducir la dimensión
+# de nuestro conjunto de datos para evitar los problemas asociados a la alta dimensionalidad. El
+# tener una alta dimensionalidad provoca que nuestro modelo predictivo caiga con mucha frecuencia
+# en el sobreajuste y sea incapáz de generalizar al momento de realizar una predicción en base a
+# datos nunca antes vistos por el modelo, otro problema de tener muchas variables de entrada es
+# que el coste computacional aumenta exponencialmente en el proceso de entrenamiento y predicción,
+# haciendo tedioso el proceso que conyeva la construcción y validación de nuestro algoritmo
+# predictivo.
+
+# Es por ello que en esta ocasión utilizaremos una técnica estadística muy popular llamada "Análisis
+# de los componentes principales", conocido por sus siglas como PCA, el cual consta en tomar
+# todas las variables de entrada de nuestro conjunto de datos y realizar tantas combinaciones
+# lineales como variables de entrada tengamos, estas combinaciones lineales se les denomina
+# componentes, y es a traves de estos que según sea el número de componentes que elijamos nos
+# encontraremos con un nuevo conjunto de datos mas pequeño que el original que explica una parte
+# de su información total y varianza de sus datos. 
+
+# Antes de implementar PCA, será necesario estandarizar nuestros datos para que no existan variables
+# con más peso que otras y el algoritmo pueda trabajar de forma correcta al momento de calcular
+# cada componente.
+
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+# Una vez estandarizados nuestros datos, procederemos a implementar PCA en ellos.
+
+# Como en un principio desconocemos el número de componentes óptimos que explican la mayor
+# información y varianza de nuestro conjunto de datos, estableceremos "None" en el parámetro
+# "n_components" con el objetivo de que la función nos muestre todos los componentes que pueda calcular
+# y raiz de ello poder visualizar y elegir a nuestro criterio el numero de componentes óptimos
+# que resumen la mayor parte de la información de nuestros datos.
+
+pca = PCA(n_components=None)
+X_train_none = pca.fit_transform(X_train)
+X_test_none = pca.transform(X_test)
+
+# Posterior a esto procederemos a crear una variable que almacene el array que contiene los
+# porcentajes de la varianza explicada en forma ascendente para cada componente, la cual
+# utilizaremos para construir una gráfica y visualizar mejor que número de componentes que nos 
+# conviene elegir.
+
+varianza_explicada = pca.explained_variance_ratio_
+
+# Para realizar el gráfico necesitaremos un array donde los procentajes obtenidos anteriormente
+# se sumen de forma secuencial cada vez que aumentemos de componente, es por ello que aplicaremos
+# la función "cumsum" a nuestro array anterior.
+
+varianza_acumulada = varianza_explicada.cumsum()
+
+# Con este nuevo array ahora si procederemos a realizar la gráfica
+
+plt.plot(range(1,41), varianza_acumulada, marker = 'o')
+plt.grid()
+plt.show()
+
+# Podemos observar que varianza explicada deja de crecer en el componente 30, y que en el componente
+# 20 tenemos aproximadamente un 98% de la varianza explicada, el cual es un valor excelente ya que
+# casi no estamos perdiendo información y habremos reducido en la mitad el numero de variables
+# de entrada de nuestro conjunto de datos, por lo cual, consideraremos este número de componentes
+# como el más optimo al ejecutar esta vez de forma definitiva la técnica del PCA.
+
+pca = PCA(n_components=20)
+X_train_pca = pca.fit_transform(X_train)
+X_test_pca = pca.transform(X_test)
+
+# Con este último paso realizado, podemos observar que nuestros conjuntos de datos pasaron de tener
+# 40 variables a tener 20, lo cual indica que la técnica se ejecuto correctamente y que estamos
+# listos para la elección y contrucción de nuestro modelo predictivo.
