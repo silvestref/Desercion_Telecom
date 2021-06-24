@@ -60,6 +60,9 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
 from imblearn.over_sampling import SMOTENC
+from sklearn import model_selection
+from sklearn.pipeline import make_pipeline
+from xgboost import XGBClassifier
 
 # Carga de datos
 data = pd.read_csv("Telco_Churn.csv")
@@ -674,8 +677,8 @@ ML_PS.plot.bar(figsize=(7,4), rot=0)
 
 # Antes de empezar con la verificación e implementación de técnicas para la transformación de
 # datos, empezaremos codificando nuestras variables categóricas a numéricas, puesto que es un
-# paso necesario para que los algoritmos de aprendizaje automático puedan aprender correctamente
-# de los datos.
+# paso necesario para que los algoritmos de aprendizaje automático (XGBoost en nuestro caso)
+# puedan aprender correctamente de los datos.
 
 data_cod = data.copy()
 encoder = LabelEncoder()
@@ -685,11 +688,8 @@ data_cod = pd.get_dummies(data_cod, columns=["gender","SeniorCitizen","Partner",
                                              "PhoneService","MultipleLines","InternetService",
                                              "OnlineSecurity","OnlineBackup","DeviceProtection",
                                              "TechSupport","StreamingTV","StreamingMovies",
-                                             "Contract","PaperlessBilling","PaymentMethod"])
-
-# Eliminamos una columna en cada una de nuestras variables dicotómicas para evitar la redundancia
-data_cod = data_cod.drop(["gender_Female","SeniorCitizen_0.0","Partner_No","Dependents_No",
-                          "PhoneService_No","PaperlessBilling_No"], axis=1)
+                                             "Contract","PaperlessBilling","PaymentMethod"],
+                                             drop_first=True)
 
 # Posterior a ello segmentaremos la totalidad de nuestros datos en dos conjuntos: variables
 # de entrada (X) y variable de salida (y). Para después volver a dividir estos conjuntos
@@ -767,17 +767,17 @@ plt.bar(counter_before.keys(), counter_before.values())
 
 # Lista que almacenará la posición de nuestras variables categóricas en el conjunto de datos
 categoricas = []  
-for i in range(3,40):
+for i in range(3,30):
     categoricas.append(i)
     
 # Inicializamos y ejecutamos la técnica SMOTE-NC
 smnc = SMOTENC(categorical_features= categoricas, random_state=21)
-X_train, y_train = smnc.fit_resample(X_train, y_train)
+X_train_bal, y_train_bal = smnc.fit_resample(X_train, y_train)
 
 # Número de muestras para cada clase en el conjunto de entrenamiento después del rebalanceo
-counter_after = Counter(y_train)
+counter_after = Counter(y_train_bal)
 print(counter_after)
-print(y_train.shape)
+print(y_train_bal.shape)
 plt.bar(counter_after.keys(), counter_after.values())
 
 # Podemos observar que ahora el número de muestras para cada clase en nuestros datos de entrenamiento
@@ -810,8 +810,8 @@ plt.bar(counter_after.keys(), counter_after.values())
 # cada componente.
 
 sc = StandardScaler()
-X_train = sc.fit_transform(X_train)
-X_test = sc.transform(X_test)
+X_train_sc = sc.fit_transform(X_train_bal)
+X_test_sc = sc.transform(X_test)
 
 # Una vez estandarizados nuestros datos, procederemos a implementar PCA en ellos.
 
@@ -822,8 +822,8 @@ X_test = sc.transform(X_test)
 # que resumen la mayor parte de la información de nuestros datos.
 
 pca = PCA(n_components=None)
-X_train_none = pca.fit_transform(X_train)
-X_test_none = pca.transform(X_test)
+X_train_none = pca.fit_transform(X_train_sc)
+X_test_none = pca.transform(X_test_sc)
 
 # Posterior a esto procederemos a crear una variable que almacene el array que contiene los
 # porcentajes de la varianza explicada en forma ascendente para cada componente, la cual
@@ -840,20 +840,28 @@ varianza_acumulada = varianza_explicada.cumsum()
 
 # Con este nuevo array ahora si procederemos a realizar la gráfica
 
-plt.plot(range(1,41), varianza_acumulada, marker = 'o')
+plt.plot(range(1,31), varianza_acumulada, marker = 'o')
 plt.grid()
 plt.show()
 
-# Podemos observar que varianza explicada deja de crecer en el componente 30, y que en el componente
+# Podemos observar que varianza explicada deja de crecer en el componente 27, y que en el componente
 # 20 tenemos aproximadamente un 98% de la varianza explicada, el cual es un valor excelente ya que
-# casi no estamos perdiendo información y habremos reducido en la mitad el numero de variables
+# casi no estamos perdiendo información y habremos reducido en 10 el numero de variables
 # de entrada de nuestro conjunto de datos, por lo cual, consideraremos este número de componentes
 # como el más optimo al ejecutar esta vez de forma definitiva la técnica del PCA.
 
 pca = PCA(n_components=20)
-X_train_pca = pca.fit_transform(X_train)
-X_test_pca = pca.transform(X_test)
+X_train_pca = pca.fit_transform(X_train_sc)
+X_test_pca = pca.transform(X_test_sc)
 
 # Con este último paso realizado, podemos observar que nuestros conjuntos de datos pasaron de tener
-# 40 variables a tener 20, lo cual indica que la técnica se ejecuto correctamente y que estamos
-# listos para la elección y contrucción de nuestro modelo predictivo.
+# 30 variables a tener 20, lo cual indica que la técnica se ejecuto correctamente y que estamos
+# listos para la contrucción y evaluación de nuestro modelo predictivo.
+
+
+#-------------------------------------------------------------------------------------------------
+#                          CONSTRUCCIÓN Y EVALUACIÓN DEL MODELO PREDICTIVO
+#-------------------------------------------------------------------------------------------------
+
+# XGBClassifier(eval_metric='logloss', use_label_encoder =False)
+
