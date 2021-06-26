@@ -60,9 +60,15 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
 from imblearn.over_sampling import SMOTENC
-from sklearn import model_selection
-from sklearn.pipeline import make_pipeline
+import xgboost as xgb
 from xgboost import XGBClassifier
+import optuna  
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import confusion_matrix, f1_score, accuracy_score, classification_report
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import roc_curve
+
 
 # Carga de datos
 data = pd.read_csv("Telco_Churn.csv")
@@ -591,20 +597,17 @@ data_corr = pd.get_dummies(data, columns = ["gender","SeniorCitizen","Partner","
                                             "PhoneService","MultipleLines","InternetService",
                                             "OnlineSecurity","OnlineBackup","DeviceProtection",
                                             "TechSupport","StreamingTV","StreamingMovies",
-                                            "Contract","PaperlessBilling","PaymentMethod","Churn"])
-
-# Eliminamos una columna en cada una de nuestras variables dicotómicas para evitar la redundancia
-data_corr = data_corr.drop(["gender_Female", "SeniorCitizen_0.0", "Partner_No","Dependents_No",
-                     "PhoneService_No", "PaperlessBilling_No", "Churn_No"], axis=1)
+                                            "Contract","PaperlessBilling","PaymentMethod","Churn"],
+                                            drop_first=True)
 
 # Debido a que contamos con muchas variables sera necesario dividir nuestro conjunto de datos y
 # graficar la matriz de correlación en base a cada una de las divisiones para poder apreciar mejor
 # la gráfica.
 
 data_corr_1 = data_corr[["tenure","MonthlyCharges","TotalCharges","gender_Male","SeniorCitizen_1.0",
-                        "Partner_Yes","Dependents_Yes","PhoneService_Yes","MultipleLines_No",
-                        "MultipleLines_No phone service","MultipleLines_Yes","Churn_Yes"]]
-data_corr_2 = data_corr.iloc[:,11:41]
+                        "Partner_Yes","Dependents_Yes","PhoneService_Yes","MultipleLines_No phone service",
+                        "MultipleLines_Yes","Churn_Yes"]]
+data_corr_2 = data_corr.iloc[:,10:31]
 
 # Matriz de correlación para el primer conjunto
 plt.figure(figsize=(30, 20))
@@ -863,5 +866,322 @@ X_test_pca = pca.transform(X_test_sc)
 #                          CONSTRUCCIÓN Y EVALUACIÓN DEL MODELO PREDICTIVO
 #-------------------------------------------------------------------------------------------------
 
-# XGBClassifier(eval_metric='logloss', use_label_encoder =False)
+# Para este proyecto utilizaremos el algoritmo del aumento del gradiente (Gradient Boosting),
+# especificamente en una de sus versiones potenciadas y optimizadas, XGBoost.
+
+# El principal motivo por el que usaremos este tipo de algoritmo es debido a que en la mayoria
+# de ocaciones, si se le suministra una correcta combinacion de hiperparametros, obtiene mejores
+# resultados al momento de predecir a comparacion con sus predecesores, los arboles de decision y
+# los bosques aleatorios, y porque esta familia de algoritmos generalmente se ajustan muy bien a
+# este tipo de problemas en donde la clasificacion de clases solo depende de la interaccion entre
+# variables.
+
+# Resumiendo el funcionamiento de los alogirtmos de Gradient Boosting tenemos:
+# Entrena un primer árbol de decisión en base a nuestro conjunto de entrenamiento
+# Predice el valor de nuestra variable de salida, compara la predicción con el resultado real y calcula el error cometido
+# Entrena un segundo árbol de decisión para tratar de corregir y reducir el error cometido del primer árbol
+# Predice nuevamente el valor de nuestra variable de salida y calcula el error cometido
+# Entrena un tercer árbol para tratar de corregir y reducir el error cometido de manera conjunta por el primer y segundo árbol
+# Predice otra vez el valor de nuestra variable de salida y calcula el error cometido
+# Este proceso se realiza iterativamente hasta llegar a un punto en donde no se pueda reducir más
+# el error cometido y se da por válido el modelo.
+# Este modelo predecirá nuevos datos en base al promedio de todas las predicciones de los árboles
+# de decisión con el que ha sido entrenado, dando más peso a aquellos árboles con poco margen de
+# error cometido.
+
+# Una vez hecha un pequeña introducción sobre los algoritmos de Gradient Boosting procederemos
+# a realizar la construcción y evalución de nuestro modelo
+
+
+# ELECCIÓN DE LA MEJOR COMBINACIÓN DE PARÁMETROS
+#-----------------------------------------------
+
+# XGBoost depende mucho de la combinación de hiperparámetros que se le suministren para tener una
+# precisión y eficacia superior a la otros modelos, es por ello que utilizaremos un framework
+# muy popular llamado Optuna para entrenar distintos modelos con distintas combinaciones de
+# hiperparámetros, con el fin de elegir la combinación que una mayor precisión nos arroje
+
+# Inicializaremos el modelo con una métrica de evaluación basada en las curvas AUC-ROC, ya que
+# es una buena métrica para determinar si el modelo distingue bien las clases de nuestra variable
+# de salida, y con un objetivo binario logístico para que AUC-ROC pueda funcionar correctamente
+xgb1 = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21)
+
+# Procederemos a crear en un diccionario con los valores de los hiperparámetros más relevantes con
+# los que queremos evaluar a nuestro modelo 
+
+
+#------------------------------
+# DATOS BALANCEADOS POR XGBOOST
+
+def objective(trial):   
+    
+    # Estos parámetros con los que se realizaran las combinaciones previamente han sido elegidos
+    # a partir del rango que mejor resultados mostraron
+    params = {"n_estimators": trial.suggest_int("n_estimators",200,1600,50),
+              "max_depth": trial.suggest_int("max_depth", 10, 25, 1),
+              "learning_rate": trial.suggest_loguniform("learning_rate", 0.001, 0.5),
+              "subsample": trial.suggest_discrete_uniform("subsample", 0.2, 1, 0.1),
+              "colsample_bytree": trial.suggest_discrete_uniform("colsample_bytree", 0.2, 1,0.1),
+              "scale_pos_weight": 2.76,
+              "tree_method": "gpu_hist", 
+              "eval_metric": "auc",
+              "objective": "binary:logistic",
+              "use_label_encoder": "False"}
+    
+    model = XGBClassifier(**params)   
+    
+    model.fit(X_train,y_train,eval_set=[(X_test,y_test)],early_stopping_rounds=100,verbose=False)
+    
+    preds = model.predict(X_test)
+    
+    accuracy = accuracy_score(y_test, preds)
+    
+    return accuracy
+
+
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=70)
+
+print('Best trial: score {}, params {}'.format(study.best_trial.value, study.best_trial.params))
+
+best_1 = study.trials_dataframe()
+
+optuna.visualization.plot_optimization_history(study)  #Necesita plotly
+
+# Se ejecutó la función tres veces de forma independiente, y posterior a ello, se registro
+# la mejor combinación de parametros que arrojo cada ejecución.
+
+# 78.70% | n_estimators=300, max_depth=19, learning_rate=0.0028, subsample=0.3, colsample_bytree=0.9 
+# 78.63% | n_estimators=1600, max_depth=24, learning_rate=0.002, subsample=0.3, colsample_bytree=0.8 
+# 78.56% | n_estimators=900, max_depth=18,  learning_rate=0.0028, subsample=0.3, colsample_bytree=0.6 
+
+# Procederemos a entrenar un nuevo modelo XGBoost en base a las tres combinaciones de hiperparámetros
+# obtenidas para determinar cual de ellas presenta mejores resultados al clasificar nuestros datos
+
+# Para la primera combinación
+xgb_1a = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       n_estimators=300, max_depth=19, learning_rate=0.0028, subsample=0.3, 
+                       colsample_bytree=0.9, scale_pos_weight=2.76)
+
+xgb_1a.fit(X_train, y_train)
+y_pred_1a = xgb_1a.predict(X_test)
+
+# Para la segunda combinación
+xgb_1b = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       n_estimators=1600, max_depth=24, learning_rate=0.002, subsample=0.3, 
+                       colsample_bytree=0.8, scale_pos_weight=2.76)
+
+xgb_1b.fit(X_train, y_train)
+y_pred_1b = xgb_1b.predict(X_test)
+
+# Para la tercera combinación
+xgb_1c = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       n_estimators=900, max_depth=18, learning_rate=0.0028, subsample=0.3, 
+                       colsample_bytree=0.6, scale_pos_weight=2.76)
+
+xgb_1c.fit(X_train, y_train)
+y_pred_1c = xgb_1c.predict(X_test)
+
+
+# COMPARACIÓN DE RENDIMIENTO ENTRE COMBINACIONES
+
+scores_1a = cross_val_score(xgb_1a, X_train, y_train, cv=10)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores_1a.mean(), scores_1a.std()))
+report_1a = classification_report(y_test,y_pred_1a)
+print(report_1a)
+
+scores_1b = cross_val_score(xgb_1b, X_train, y_train, cv=10)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores_1b.mean(), scores_1b.std()))
+report_1b = classification_report(y_test,y_pred_1b)
+print(report_1b)
+
+scores_1c = cross_val_score(xgb_1c, X_train, y_train, cv=10)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores_1c.mean(), scores_1c.std()))
+report_1c = classification_report(y_test,y_pred_1c)
+print(report_1c)
+
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_1a), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("CONFUSION MATRIX 1A",fontsize=14)
+plt.show()
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_1b), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("CONFUSION MATRIX 1B",fontsize=14)
+plt.show()
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_1c), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("CONFUSION MATRIX 1C",fontsize=14)
+plt.show()
+
+
+y_pred_prob1a = xgb_1a.predict_proba(X_test)[:,1]
+fpr_1a, tpr_1a, thresholds_1a = roc_curve(y_test, y_pred_prob1a)
+y_pred_prob1b = xgb_1b.predict_proba(X_test)[:,1]
+fpr_1b, tpr_1b, thresholds_1b = roc_curve(y_test, y_pred_prob1b)
+y_pred_prob1c = xgb_1c.predict_proba(X_test)[:,1]
+fpr_1c, tpr_1c, thresholds_1c = roc_curve(y_test, y_pred_prob1c)
+
+plt.plot([0, 1], [0, 1], 'k--' )
+plt.plot(fpr_1a, tpr_1a, label='Combinación 1',color = "r")
+plt.plot(fpr_1b, tpr_1b, label='Combinación 2',color = "g")
+plt.plot(fpr_1c, tpr_1c, label='Combinación 3',color = "b")
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Random Forest ROC Curve',fontsize=16)
+plt.legend()
+plt.show()
+
+auc = roc_auc_score(y_test, y_pred_1a)
+print("AUC: %.2f%%" % (auc * 100.0))
+
+auc = roc_auc_score(y_test, y_pred_1b)
+print("AUC: %.2f%%" % (auc * 100.0))
+
+auc = roc_auc_score(y_test, y_pred_1c)
+print("AUC: %.2f%%" % (auc * 100.0))
+
+# Con esto observamos que la combinacion 3 (C) clasifica mejor nuestros datos al obtener un
+# puntaje AUC levemente superior al de las demas combinaciones, por lo tanto, utilizaremos esta
+# combinacion como referente del modelo de "Datos rebalanceados con XGBoot"
+
+
+#--------------------
+# DATOS REBALANCEADOS
+
+def objective(trial):   
+    
+    params = {"n_estimators": trial.suggest_int("n_estimators",100,1200,50),
+              "max_depth": trial.suggest_int("max_depth", 10, 25, 1),
+              "learning_rate": trial.suggest_loguniform("learning_rate", 0.001, 0.5),
+              "subsample": trial.suggest_discrete_uniform("subsample", 0.4, 1, 0.1),
+              "colsample_bytree": trial.suggest_discrete_uniform("colsample_bytree", 0.4, 1,0.1),
+              "tree_method": "gpu_hist", 
+              "eval_metric": "auc",
+              "objective": "binary:logistic",
+              "use_label_encoder": "False"}
+    
+    model = XGBClassifier(**params)   
+    
+    model.fit(X_train_bal,y_train_bal,eval_set=[(X_test,y_test)],early_stopping_rounds=100,verbose=False)
+    
+    preds = model.predict(X_test)
+    
+    accuracy = accuracy_score(y_test, preds)
+    
+    return accuracy
+
+
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=70)
+
+print('Best trial: score {}, params {}'.format(study.best_trial.value, study.best_trial.params))
+
+a = study.trials_dataframe()
+
+# 78.42% colsample=0.9, learning_rate=0.0036, max_depth=20, n_estimators=300, subsample=0.9
+# 78.63% colsample=0.9, learning_rate=0.001, max_depth=18, n_estimators=250, subsample=0.6
+# 78.65% colsample=0.8, learning_rate=0.0021, max_depth=15, n_estimators=450, subsample=0.6
+
+xgb_gs = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       colsample_bytree=0.8, learning_rate=0.0021, max_depth=15, n_estimators=450,
+                       subsample=0.6)
+
+xgb_gs.fit(X_train_bal, y_train_bal)
+y_pred_gs = xgb_gs.predict(X_test)
+
+
+accuracy = accuracy_score(y_test, y_pred_gs)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+report = classification_report(y_test,y_pred_gs)
+print(report)
+
+
+scores = cross_val_score(xgb_gs, X_train, y_train, cv=10)
+scores
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_gs),
+                annot=True,fmt = "d",linecolor="k",linewidths=3)
+plt.title("FINAL CONFUSION MATRIX",fontsize=14)
+plt.show()
+
+
+#--------------------
+# DATOS ESCALADOS, REBALANCEADOS Y PCA
+
+def objective(trial):   
+    
+    params = {"n_estimators": trial.suggest_int("n_estimators",300,1500,50),
+              "max_depth": trial.suggest_int("max_depth", 10, 25, 1),
+              "learning_rate": trial.suggest_loguniform("learning_rate", 0.001, 0.5),
+              "subsample": trial.suggest_discrete_uniform("subsample", 0.3, 1, 0.1),
+              "colsample_bytree": trial.suggest_discrete_uniform("colsample_bytree", 0.3, 1,0.1),
+              "tree_method": "gpu_hist", 
+              "eval_metric": "auc",
+              "objective": "binary:logistic",
+              "use_label_encoder": "False"}
+    
+    model = XGBClassifier(**params)   
+    
+    model.fit(X_train_pca,y_train_bal,eval_set=[(X_test_pca,y_test)],early_stopping_rounds=100,verbose=False)
+    
+    preds = model.predict(X_test_pca)
+    
+    accuracy = accuracy_score(y_test, preds)
+    
+    return accuracy
+
+
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=70)
+
+print('Best trial: score {}, params {}'.format(study.best_trial.value, study.best_trial.params))
+
+a = study.trials_dataframe()
+
+# 77.71% colsample=0.4, learning_rate=0.0033, max_depth=15, n_estimators=1000, subsample=0.4
+# 77.71% colsample=0.7, learning_rate=0.091, max_depth=25, n_estimators=800, subsample=0.4
+# 77.78% colsample=0.3, learning_rate=0.001, max_depth=22, n_estimators=1200, subsample=0.5
+
+xgb_gs = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       colsample_bytree=0.8, learning_rate=0.0021, max_depth=15, n_estimators=450,
+                       subsample=0.6)
+
+xgb_gs.fit(X_train_bal, y_train_bal)
+y_pred_gs = xgb_gs.predict(X_test)
+
+
+accuracy = accuracy_score(y_test, y_pred_gs)
+print("Accuracy: %.2f%%" % (accuracy * 100.0))
+
+report = classification_report(y_test,y_pred_gs)
+print(report)
+
+
+scores = cross_val_score(xgb_gs, X_train, y_train, cv=10)
+scores
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_gs),
+                annot=True,fmt = "d",linecolor="k",linewidths=3)
+plt.title("FINAL CONFUSION MATRIX",fontsize=14)
+plt.show()
+
+
+
+# Mejor modelo hasta ahora
+# colsample=0.7, learning_rate=0.001, max_depht=19, n_estimator=900, subsample=0.5
+
+# Mejor modelo precision hasta ahora 
+# colsample=0.7, learning_rate=0.001, max_depht=16, n_estimator=1150, subsample=0.4
+
+
+
+
 
