@@ -988,28 +988,28 @@ y_pred_1c = xgb_1c.predict(X_test)
 
 # Para la primera combinación
 f1_1a = f1_score(y_test, y_pred_1a)
-auc_1a = accuracy_score(y_test, y_pred_1a)
+acc_1a = accuracy_score(y_test, y_pred_1a)
 report_1a = classification_report(y_test,y_pred_1a)
 
 # Para la segunda combinación
 f1_1b = f1_score(y_test, y_pred_1b)
-auc_1b = accuracy_score(y_test, y_pred_1b)
+acc_1b = accuracy_score(y_test, y_pred_1b)
 report_1b = classification_report(y_test,y_pred_1b)
 
 # Para la tercera combinación
 f1_1c = f1_score(y_test, y_pred_1c)
-auc_1c = accuracy_score(y_test, y_pred_1c)
+acc_1c = accuracy_score(y_test, y_pred_1c)
 report_1c = classification_report(y_test,y_pred_1c)
 
 
 print("F1 primera comb.: %.2f%%" % (f1_1a * 100.0))
-print("Accuracy primera comb.: %.2f%%" % (auc_1a * 100.0))
+print("Accuracy primera comb.: %.2f%%" % (acc_1a * 100.0))
 print("-------------------------------")
 print("F1 segunda comb.: %.2f%%" % (f1_1b * 100.0))
-print("Accuracy segunda comb.: %.2f%%" % (auc_1b * 100.0))
+print("Accuracy segunda comb.: %.2f%%" % (acc_1b * 100.0))
 print("-------------------------------")
 print("F1 tercera comb.: %.2f%%" % (f1_1c * 100.0))
-print("Accuracy tercera comb.: %.2f%%" % (auc_1c * 100.0))
+print("Accuracy tercera comb.: %.2f%%" % (acc_1c * 100.0))
 
 print(report_1a)
 print("-------------------------------------------------")
@@ -1053,7 +1053,7 @@ plt.plot(fpr_1b, tpr_1b, label='Combinación 2',color = "g")
 plt.plot(fpr_1c, tpr_1c, label='Combinación 3',color = "b")
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Random Forest ROC Curve',fontsize=16)
+plt.title('XGBOOST ROC Curve',fontsize=16)
 plt.legend()
 plt.show()
 
@@ -1144,28 +1144,28 @@ y_pred_2c = xgb_2c.predict(X_test)
 
 # Para la primera combinación
 f1_2a = f1_score(y_test, y_pred_2a)
-auc_2a = accuracy_score(y_test, y_pred_2a)
+acc_2a = accuracy_score(y_test, y_pred_2a)
 report_2a = classification_report(y_test,y_pred_2a)
 
 # Para la segunda combinación
 f1_2b = f1_score(y_test, y_pred_2b)
-auc_2b = accuracy_score(y_test, y_pred_2b)
+acc_2b = accuracy_score(y_test, y_pred_2b)
 report_2b = classification_report(y_test,y_pred_2b)
 
 # Para la tercera combinación
 f1_2c = f1_score(y_test, y_pred_2c)
-auc_2c = accuracy_score(y_test, y_pred_2c)
+acc_2c = accuracy_score(y_test, y_pred_2c)
 report_2c = classification_report(y_test,y_pred_2c)
 
 
 print("F1 primera comb.: %.2f%%" % (f1_2a * 100.0))
-print("Accuracy primera comb.: %.2f%%" % (auc_2a * 100.0))
+print("Accuracy primera comb.: %.2f%%" % (acc_2a * 100.0))
 print("-------------------------------")
 print("F1 segunda comb.: %.2f%%" % (f1_2b * 100.0))
-print("Accuracy segunda comb.: %.2f%%" % (auc_2b * 100.0))
+print("Accuracy segunda comb.: %.2f%%" % (acc_2b * 100.0))
 print("-------------------------------")
 print("F1 tercera comb.: %.2f%%" % (f1_2c * 100.0))
-print("Accuracy tercera comb.: %.2f%%" % (auc_2c * 100.0))
+print("Accuracy tercera comb.: %.2f%%" % (acc_2c * 100.0))
 
 print(report_2a)
 print("-------------------------------------------------")
@@ -1210,7 +1210,7 @@ plt.plot(fpr_2b, tpr_2b, label='Combinación 2',color = "g")
 plt.plot(fpr_2c, tpr_2c, label='Combinación 3',color = "b")
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Random Forest ROC Curve',fontsize=16)
+plt.title('XGBOOST ROC Curve',fontsize=16)
 plt.legend()
 plt.show()
 
@@ -1233,11 +1233,11 @@ print("AUC tercera comb.: %.2f%%" % (auc_2c * 100.0))
 
 
 #--------------------
-# DATOS ESCALADOS, REBALANCEADOS Y PCA
+# DATOS ESCALADOS, REBALANCEADOS Y CON PCA
 
 def objective(trial):   
     
-    params = {"n_estimators": trial.suggest_int("n_estimators",300,1500,50),
+    params = {"n_estimators": trial.suggest_int("n_estimators",200,1200,50),
               "max_depth": trial.suggest_int("max_depth", 10, 25, 1),
               "learning_rate": trial.suggest_loguniform("learning_rate", 0.001, 0.5),
               "subsample": trial.suggest_discrete_uniform("subsample", 0.3, 1, 0.1),
@@ -1263,45 +1263,201 @@ study.optimize(objective, n_trials=70)
 
 print('Best trial: score {}, params {}'.format(study.best_trial.value, study.best_trial.params))
 
-a = study.trials_dataframe()
+best_3 = study.trials_dataframe()
 
-# 77.71% colsample=0.4, learning_rate=0.0033, max_depth=15, n_estimators=1000, subsample=0.4
-# 77.71% colsample=0.7, learning_rate=0.091, max_depth=25, n_estimators=800, subsample=0.4
-# 77.78% colsample=0.3, learning_rate=0.001, max_depth=22, n_estimators=1200, subsample=0.5
+# 77.78% n_estimators=1200, max_depth=22, learning_rate=0.001, subsample=0.5, colsample_bytree=0.3    
+# 77.71% n_estimators=1000, max_depth=15, learning_rate=0.0033, subsample=0.4, colsample_bytree=0.4   
+# 77.71% n_estimators=800, max_depth=25, learning_rate=0.091, subsample=0.4, colsample_bytree=0.7   
 
-xgb_gs = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
-                       colsample_bytree=0.8, learning_rate=0.0021, max_depth=15, n_estimators=450,
-                       subsample=0.6)
+# Procederemos a entrenar un nuevo modelo XGBoost en base a las tres combinaciones de hiperparámetros
+# obtenidas para determinar cual de ellas presenta mejores resultados al clasificar nuestros datos
 
-xgb_gs.fit(X_train_bal, y_train_bal)
-y_pred_gs = xgb_gs.predict(X_test)
+# Para la primera combinación
+xgb_3a = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       n_estimators=1200, max_depth=22, learning_rate=0.001, subsample=0.5, 
+                       colsample_bytree=0.3)
+
+xgb_3a.fit(X_train_pca, y_train_bal)
+y_pred_3a = xgb_3a.predict(X_test_pca)
+
+# Para la segunda combinación
+xgb_3b = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       n_estimators=1000, max_depth=15, learning_rate=0.0033, subsample=0.4, 
+                       colsample_bytree=0.4)
+
+xgb_3b.fit(X_train_pca, y_train_bal)
+y_pred_3b = xgb_3b.predict(X_test_pca)
+
+# Para la tercera combinación
+xgb_3c = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
+                       n_estimators=800, max_depth=25, learning_rate=0.091, subsample=0.4, 
+                       colsample_bytree=0.7)
+
+xgb_3c.fit(X_train_pca, y_train_bal)
+y_pred_3c = xgb_3c.predict(X_test_pca)
 
 
-accuracy = accuracy_score(y_test, y_pred_gs)
-print("Accuracy: %.2f%%" % (accuracy * 100.0))
+# COMPARACIÓN DE RENDIMIENTO ENTRE COMBINACIONES
+
+# Para la primera combinación
+f1_3a = f1_score(y_test, y_pred_3a)
+acc_3a = accuracy_score(y_test, y_pred_3a)
+report_3a = classification_report(y_test,y_pred_3a)
+
+# Para la segunda combinación
+f1_3b = f1_score(y_test, y_pred_3b)
+acc_3b = accuracy_score(y_test, y_pred_3b)
+report_3b = classification_report(y_test,y_pred_3b)
+
+# Para la tercera combinación
+f1_3c = f1_score(y_test, y_pred_3c)
+acc_3c = accuracy_score(y_test, y_pred_3c)
+report_3c = classification_report(y_test,y_pred_3c)
 
 
-report = classification_report(y_test,y_pred_gs)
-print(report)
+print("F1 primera comb.: %.2f%%" % (f1_3a * 100.0))
+print("Accuracy primera comb.: %.2f%%" % (acc_3a * 100.0))
+print("-------------------------------")
+print("F1 segunda comb.: %.2f%%" % (f1_3b * 100.0))
+print("Accuracy segunda comb.: %.2f%%" % (acc_3b * 100.0))
+print("-------------------------------")
+print("F1 tercera comb.: %.2f%%" % (f1_3c * 100.0))
+print("Accuracy tercera comb.: %.2f%%" % (acc_3c * 100.0))
 
+print(report_3a)
+print("-------------------------------------------------")
+print(report_3b)
+print("-------------------------------------------------")
+print(report_3c)
 
-scores = cross_val_score(xgb_gs, X_train, y_train, cv=10)
-scores
-print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+# Observamos que la primera combinación tiene mejores valores de métrica que las demas combinaciones
+
+# Procederemos a graficar la matriz de confusión y la curva ROC-AUC, por ultimo obtendremos su valor
+# como métrica para tomar la decisión final sobre que combinación elegir 
 
 plt.figure(figsize=(4,3))
-sns.heatmap(confusion_matrix(y_test, y_pred_gs),
-                annot=True,fmt = "d",linecolor="k",linewidths=3)
-plt.title("FINAL CONFUSION MATRIX",fontsize=14)
+sns.heatmap(confusion_matrix(y_test, y_pred_3a), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("CONFUSION MATRIX 2A",fontsize=14)
 plt.show()
 
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_3b), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("CONFUSION MATRIX 2B",fontsize=14)
+plt.show()
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_3c), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("CONFUSION MATRIX 2C",fontsize=14)
+plt.show()
+
+# A simple vista podemos descartar la combinacion 1 ya que su balance entre verdaderos positivos
+# y falsos positivos es menor en comparacion con las demás combinaciones, y que tanto la combinacion
+# 2 como 3 tienen distribuciones similares
+
+y_pred_prob3a = xgb_3a.predict_proba(X_test_pca)[:,1]
+fpr_3a, tpr_3a, thresholds_3a = roc_curve(y_test, y_pred_prob3a)
+y_pred_prob3b = xgb_3b.predict_proba(X_test_pca)[:,1]
+fpr_3b, tpr_3b, thresholds_3b = roc_curve(y_test, y_pred_prob3b)
+y_pred_prob3c = xgb_3c.predict_proba(X_test_pca)[:,1]
+fpr_3c, tpr_3c, thresholds_3c = roc_curve(y_test, y_pred_prob3c)
+
+plt.plot([0, 1], [0, 1], 'k--' )
+plt.plot(fpr_3a, tpr_3a, label='Combinación 1',color = "r")
+plt.plot(fpr_3b, tpr_3b, label='Combinación 2',color = "g")
+plt.plot(fpr_3c, tpr_3c, label='Combinación 3',color = "b")
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('XGBOOST ROC Curve',fontsize=16)
+plt.legend()
+plt.show()
+
+# En el grafico distinguimos que la combinacion 3 tiene la peor curva AUC, y que tanto las
+# combinaciones 1 como 2, tienen un ajuste similar, por lo que calcularan sus valores en forma
+# de porcentaje
+
+auc_3a = roc_auc_score(y_test, y_pred_3a)
+auc_3b = roc_auc_score(y_test, y_pred_3b)
+auc_3c = roc_auc_score(y_test, y_pred_3c)
+
+print("AUC primera comb.: %.2f%%" % (auc_2a * 100.0))
+print("AUC segunda comb.: %.2f%%" % (auc_2b * 100.0))
+print("AUC tercera comb.: %.2f%%" % (auc_2c * 100.0))
+
+# Con todo lo anterior mostrado observamos que la segunda combinacion tiene ligeramente mejores
+# valores de métrica que las demás combinaciones, por lo tanto, se eligira a esta combinacion
+# como referente del modelo de "Datos escalados, rebalanceados y con PCA".
 
 
-# Mejor modelo hasta ahora
-# colsample=0.7, learning_rate=0.001, max_depht=19, n_estimator=900, subsample=0.5
+# ELECCIÓN DEL MEJOR MODELO
+#-----------------------------
 
-# Mejor modelo precision hasta ahora 
-# colsample=0.7, learning_rate=0.001, max_depht=16, n_estimator=1150, subsample=0.4
+# Despues de haber elegido las tres mejores combinaciones en base al entrenamiento de conjuntos
+# sin transformacion y con transformacion que habiamos realizado en la anterior seccion, procederemos
+# a compararlos entre si para quedarnos con el modelo definitivo que mejores resultados de evaluación
+# tenga.
+
+print("F1 Primer conjunto: %.2f%%" % (f1_1c * 100.0))
+print("Accuracy Primer conjunto: %.2f%%" % (acc_1c * 100.0))
+print("-------------------------------")
+print("F1 Segundo conjunto: %.2f%%" % (f1_2c * 100.0))
+print("Accuracy Segundo conjunto: %.2f%%" % (acc_2c * 100.0))
+print("-------------------------------")
+print("F1 Tercer conjunto: %.2f%%" % (f1_3b * 100.0))
+print("Accuracy Tercer conjunto: %.2f%%" % (acc_3b * 100.0))
+
+print(report_1c)
+print("-------------------------------------------------")
+print(report_2c)
+print("-------------------------------------------------")
+print(report_3b)
+
+# Observamos que hasta el momento, el modelo del primer conjunto y el segundo conjunto tienen
+# resultados similares, por lo que se procedera a graficar sus matrices de conjusion
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_1c), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("Primer conjunto",fontsize=14)
+plt.show()
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_2c), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("Segundo conjunto",fontsize=14)
+plt.show()
+
+plt.figure(figsize=(4,3))
+sns.heatmap(confusion_matrix(y_test, y_pred_3b), annot=True, fmt = "d", linecolor="k", linewidths=3)
+plt.title("Tercer conjunto",fontsize=14)
+plt.show()
+
+# Intuitivamente podemos descartar el modelo del tercer conjunto ya que sus resultados al predecir
+# nuestra clase minoritaria son inferiores a los demas modelos. Por otra parte, observamos que
+# el modelo del primer conjunto clasifica ligeramente mejor los clientes que abandonaron los
+# servicios de la empresa
+
+
+plt.plot([0, 1], [0, 1], 'k--' )
+plt.plot(fpr_1c, tpr_1c, label='Primer conjunto',color = "r")
+plt.plot(fpr_2c, tpr_2c, label='Segundo conjunto',color = "g")
+plt.plot(fpr_3b, tpr_3b, label='Tercer conjunto',color = "b")
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('XGBOOST ROC Curve',fontsize=16)
+plt.legend()
+plt.show()
+
+# Con la grafica de la curva ROC-AUC claramente podemos identificar que el modelo del primer
+# conjunto tiene una mayor sensibilidad frente a los demás modelos, por lo que el último paso
+# a realizar para escoger que modelo utilizar es calcular el valor de la curva como métrica
+
+print("AUC Primer conjunto: %.2f%%" % (auc_1c * 100.0))
+print("AUC Segundo conjunto: %.2f%%" % (auc_2c * 100.0))
+print("AUC Tercer conjunto: %.2f%%" % (auc_2b * 100.0))
+
+# Con esto ultimo calculado, dado que el modelo del primer conjunto nos ha dado mejores resultados
+# en las métricas importantes cuando se trabajan con datos desbalanceados: F1 y AUC, se tomara
+# este modelo como resultado final para la predicción de clientes que son propensos a desertar
+# los servicios de la empresa
+
 
 
 
