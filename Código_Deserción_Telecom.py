@@ -50,6 +50,8 @@
 # Librerías
 import pandas as pd
 import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
 import seaborn as sns
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
@@ -68,6 +70,7 @@ from sklearn.metrics import confusion_matrix, f1_score, accuracy_score, classifi
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import roc_curve
+import joblib
 
 
 # Carga de datos
@@ -75,25 +78,25 @@ data = pd.read_csv("Telco_Churn.csv")
 
 
 #------------------------------------------------------------------------------------------------
-#                                     EXPLORACIÓN DE DATOS
+#                                     EXPLORACIÓN DE LOS DATOS
 #------------------------------------------------------------------------------------------------
-
-#-----------------------------------------------
-#  ELIMINACIÓN Y CODIFICACIÓN DE CARACTERÍSTICAS
-#-----------------------------------------------
 
 data.head()
 
 data.info()
 
+#-----------------------------------------------
+#  ELIMINACIÓN Y CODIFICACIÓN DE VARIABLES
+#-----------------------------------------------
+
 # Obsevamos que en nuestro conjunto de datos tenemos una columna llamada "customerID", el cuál es
 # un conjunto de números y letras que hacen referencia al ID del cliente, debido a que no es una
 # variable relevante para nuestro estudio y construcción del modelo predictivo, se procederá a 
-# eliminarlo.
+# eliminarla.
 data = data.drop(['customerID'], axis=1)
 
 # También se observa que algunas variables estan etiquetadas incorrectamente con un tipo de dato
-# que no les corresponde, como en el caso de "SeniorCitizen" : float y "TotalCharges" : object,
+# que no les corresponde, como en el caso de "SeniorCitizen":float y "TotalCharges":object,
 # es por ello que se procederá a convertirlas al tipo de dato correcto.
 
 # Conversión de la columna "SeniorCitizen" a object
@@ -133,7 +136,7 @@ plt.show()
 # Observamos cuantos valores faltantes hay en nuestro conjunto de datos
 data.isnull().sum().sum()
 
-# Observamos cuantos valores faltantes hay en cada columna
+# Observamos cuantos valores faltantes hay en cada variable
 data.isnull().sum()
 
 # Porcentaje de valores nulos respecto del total
@@ -191,15 +194,15 @@ data = pd.concat([categoricas, numericas, salida], axis=1)
 data.isnull().sum().sum()
 data.isnull().sum()
 
-# Y efectivamente, los métodos utilizados imputaron de forma satisfactoria los valores faltantes.
+# Y ahora observamos que los métodos utilizados imputaron de forma satisfactoria los valores faltantes.
 
 
 #------------------------------------------------------------------------------------------------
 #                                ANÁLISIS Y VISUALIZACIÓN DE DATOS
 #------------------------------------------------------------------------------------------------
 
-# Empezaremos la sección formulando algunas hipótesis que seran respondidas mediante el proceso
-# de análisis de los datos
+# En base a las variables que tenemos disponible empezaremos la sección formulando algunas
+# hipótesis que seran respondidas mediante el proceso de análisis de los datos.
 
 # H1: ¿El género del cliente propicia la deserción de los servicios de la empresa?
 # H2: ¿Son los clientes de la tercera edad mas propensos a desertar?
@@ -222,7 +225,7 @@ data.isnull().sum()
 # H19: ¿Existe algún metodo de pago en particular preferido por los clientes desertores?
 
 
-# Visualizaremos la distribución de los datos respecto a cada uno de los tres conjuntos de
+# Para comenzar. visualizaremos la distribución de los datos respecto a cada uno de los tres conjuntos de
 # variables que se han identificado: Variables de información del cliente - Variables de servicio
 # - Variables de contrato. Esta segmentación nos permitirá realizar un análisis mas ordenado e
 # identificar patrones e información util para entender nuestros datos.
@@ -230,13 +233,21 @@ data.isnull().sum()
 # Variables de información del cliente
 
 fig, ax = plt.subplots(2, 2, figsize=(16, 8))
+plt.subplots_adjust(wspace=0.2, hspace=0.3)
 sns.countplot(data=data, x="gender", ax=ax[0,0])
+ax[0,0].set_title("Gender")
+ax[0,0].set_xlabel("")
 sns.countplot(data=data, x="SeniorCitizen", ax=ax[0,1])
+ax[0,1].set_title("SeniorCitizen")
+ax[0,1].set_xlabel("")
 sns.countplot(data=data, x="Partner", ax=ax[1,0])
+ax[1,0].set_title("Partner")
+ax[1,0].set_xlabel("")
 sns.countplot(data=data, x="Dependents", ax=ax[1,1])
+ax[1,1].set_title("Dependents")
+ax[1,1].set_xlabel("")
 fig.suptitle('Distribución de las variables de información del cliente', fontsize=16)
 plt.show()
-
 # Observamos que tenemos una distribución equitativa en nuestras variables "gender" y 
 # "Partner", lo cual nos indica que ningún género predomina sobre el otro en la empresa, a la 
 # vez que hay tantas personas con pareja como sin pareja.
@@ -248,15 +259,34 @@ plt.show()
 # Variables de servicio
 
 fig, ax = plt.subplots(3, 3, figsize=(16, 12))
+plt.subplots_adjust(wspace=0.3, hspace=0.3)
 sns.countplot(data=data, x="PhoneService", ax=ax[0,0])
+ax[0,0].set_title("PhoneService")
+ax[0,0].set_xlabel("")
 sns.countplot(data=data, x="MultipleLines", ax=ax[0,1])
+ax[0,1].set_title("MultipleLines")
+ax[0,1].set_xlabel("")
 sns.countplot(data=data, x="InternetService", ax=ax[0,2])
+ax[0,2].set_title("InternetService")
+ax[0,2].set_xlabel("")
 sns.countplot(data=data, x="OnlineSecurity", ax=ax[1,0])
+ax[1,0].set_title("OnlineSecurity")
+ax[1,0].set_xlabel("")
 sns.countplot(data=data, x="OnlineBackup", ax=ax[1,1])
+ax[1,1].set_title("OnlineBackup")
+ax[1,1].set_xlabel("")
 sns.countplot(data=data, x="DeviceProtection", ax=ax[1,2])
+ax[1,2].set_title("DeviceProtection")
+ax[1,2].set_xlabel("")
 sns.countplot(data=data, x="TechSupport", ax=ax[2,0])
+ax[2,0].set_title("TechSupport")
+ax[2,0].set_xlabel("")
 sns.countplot(data=data, x="StreamingTV", ax=ax[2,1])
+ax[2,1].set_title("StreamingTV")
+ax[2,1].set_xlabel("")
 sns.countplot(data=data, x="StreamingMovies", ax=ax[2,2])
+ax[2,2].set_title("StreamingMovies")
+ax[2,2].set_xlabel("")
 fig.suptitle('Distribución de las variables de servicio', fontsize=16)
 plt.show()
 
@@ -284,9 +314,16 @@ plt.show()
 # Variables de contrato
 
 fig, ax = plt.subplots(1, 3, figsize=(16, 4))
+plt.subplots_adjust(wspace=0.3, top=0.75)
 sns.histplot(data=data, x="tenure", kde=True, ax=ax[0])
+ax[0].set_title("Tenure")
+ax[0].set_xlabel("")
 sns.histplot(data=data, x="MonthlyCharges", kde=True, ax=ax[1])
+ax[1].set_title("MonthlyCharges")
+ax[1].set_xlabel("")
 sns.histplot(data=data, x="TotalCharges", kde=True, ax=ax[2])
+ax[2].set_title("TotalCharges")
+ax[2].set_xlabel("")
 fig.suptitle('Distribución de las variables de contrato', fontsize=16)
 
 # De estos resultados se extrae la siguiente información:
@@ -309,10 +346,17 @@ fig.suptitle('Distribución de las variables de contrato', fontsize=16)
 # gran cantidad de clientes con pocos meses en la empresa y con cargos mensuales bajos.
 
 fig, ax = plt.subplots(1, 2, figsize=(16, 4))
+plt.subplots_adjust(wspace=0.3)
 sns.countplot(data=data, x="Contract", ax=ax[0])
+ax[0].set_title("Contract")
+ax[0].set_xlabel("")
 sns.countplot(data=data, x="PaperlessBilling", ax=ax[1])
-fig, ax = plt.subplots(1, 1, figsize=(16, 4))
+ax[1].set_title("PaperlessBilling")
+ax[1].set_xlabel("")
+fig, ax = plt.subplots(1, 1, figsize=(14, 4))
 sns.countplot(data=data, y="PaymentMethod")
+ax.set_title("PaymentMethod")
+ax.set_ylabel("")
 plt.show()
 
 # Observamos que el contrato preferido por los clientes es el de "Month to month", el cual es el
@@ -325,19 +369,27 @@ plt.show()
 # Por ultimo, observamos que la mayoría de clientes prefiere el método de pago con cheque
 # electrónico, la distribución de los demas metodos se mantiene de forma equitativa entre ellos.
 
-# En base a todo lo anterior visto, procederemos a responder las hipótesis que inicialmente
-# habíamos planteado, esto lo lograremos mediante un análisis bivariado de nuestras variables de
-# entrada con nuestra variable de salida.
+# Una vez conocida la distribución de las variables con las que vamos a trabajar, procederemos a
+# responder las hipótesis que inicialmente habíamos planteado, esto lo lograremos mediante un análisis
+# bivariado de nuestras variables de entrada con nuestra variable de salida.
 
 
 # Variables de información del cliente vs "Churn"
 
 fig, ax = plt.subplots(2, 2, figsize=(16, 8))
-
+plt.subplots_adjust(hspace=0.3)
 sns.countplot(data=data, x="gender", ax=ax[0,0], hue=data.Churn)
+ax[0,0].set_title("Gender")
+ax[0,0].set_xlabel("")
 sns.countplot(data=data, x="SeniorCitizen", ax=ax[0,1], hue=data.Churn)
+ax[0,1].set_title("SeniorCitizen")
+ax[0,1].set_xlabel("")
 sns.countplot(data=data, x="Partner", ax=ax[1,0], hue=data.Churn)
+ax[1,0].set_title("Partner")
+ax[1,0].set_xlabel("")
 sns.countplot(data=data, x="Dependents", ax=ax[1,1], hue=data.Churn)
+ax[1,1].set_title("Dependents")
+ax[1,1].set_xlabel("")
 fig.suptitle('Variables de información del cliente vs Churn', fontsize=16)
 plt.show()
 
@@ -373,15 +425,34 @@ plt.show()
 # Variables de servicio vs "Churn"
 
 fig, ax = plt.subplots(3, 3, figsize=(16, 12))
+plt.subplots_adjust(wspace=0.3, hspace=0.3)
 sns.countplot(data=data, x="PhoneService", ax=ax[0,0], hue=data["Churn"])
+ax[0,0].set_title("PhoneService")
+ax[0,0].set_xlabel("")
 sns.countplot(data=data, x="MultipleLines", ax=ax[0,1], hue=data["Churn"])
+ax[0,1].set_title("MultipleLines")
+ax[0,1].set_xlabel("")
 sns.countplot(data=data, x="InternetService", ax=ax[0,2], hue=data["Churn"])
+ax[0,2].set_title("InternetService")
+ax[0,2].set_xlabel("")
 sns.countplot(data=data, x="OnlineSecurity", ax=ax[1,0], hue=data["Churn"])
+ax[1,0].set_title("OnlineSecurity")
+ax[1,0].set_xlabel("")
 sns.countplot(data=data, x="OnlineBackup", ax=ax[1,1], hue=data["Churn"])
+ax[1,1].set_title("OnlineBackup")
+ax[1,1].set_xlabel("")
 sns.countplot(data=data, x="DeviceProtection", ax=ax[1,2], hue=data["Churn"])
+ax[1,2].set_title("DeviceProtection")
+ax[1,2].set_xlabel("")
 sns.countplot(data=data, x="TechSupport", ax=ax[2,0], hue=data["Churn"])
+ax[2,0].set_title("TechSupport")
+ax[2,0].set_xlabel("")
 sns.countplot(data=data, x="StreamingTV", ax=ax[2,1], hue=data["Churn"])
+ax[2,1].set_title("StreamingTV")
+ax[2,1].set_xlabel("")
 sns.countplot(data=data, x="StreamingMovies", ax=ax[2,2], hue=data["Churn"])
+ax[2,2].set_title("StreamingMovies")
+ax[2,2].set_xlabel("")
 fig.suptitle('Variables de servicio vs Churn', fontsize=16)
 plt.show()
 
@@ -434,10 +505,17 @@ plt.show()
 
 # Variables de contrato vs "Churn"
 
-fig, axs = plt.subplots(1, 3, figsize=(16, 4))
-sns.histplot(data=data, x="tenure", kde=True, ax=axs[0], hue=data.Churn)
-sns.histplot(data=data, x="MonthlyCharges", kde=True, ax=axs[1], hue=data.Churn)
-sns.histplot(data=data, x="TotalCharges", kde=True, ax=axs[2], hue=data.Churn)
+fig, ax = plt.subplots(1, 3, figsize=(16, 4))
+plt.subplots_adjust(wspace=0.3, top=0.75)
+sns.histplot(data=data, x="tenure", kde=True, ax=ax[0], hue=data.Churn)
+ax[0].set_title("Tenure")
+ax[0].set_xlabel("")
+sns.histplot(data=data, x="MonthlyCharges", kde=True, ax=ax[1], hue=data.Churn)
+ax[1].set_title("MonthlyCharges")
+ax[1].set_xlabel("")
+sns.histplot(data=data, x="TotalCharges", kde=True, ax=ax[2], hue=data.Churn)
+ax[2].set_title("TotalCharges")
+ax[2].set_xlabel("")
 fig.suptitle('Variables de servicio vs Churn', fontsize=16)
 plt.show()
 
@@ -476,12 +554,18 @@ plt.show()
 # H16: Los clientes con poca cantidad de dinero total a pagar son igualmente propensos a abandonar como permanecer en la empresa
 
 
-fig, axs = plt.subplots(1, 2, figsize=(16, 4))
-sns.countplot(data=data, x="Contract", ax=axs[0], hue=data.Churn)
-sns.countplot(data=data, x="PaperlessBilling", ax=axs[1], hue=data.Churn)
-fig.suptitle('Variables de servicio vs Churn', fontsize=16)
-fig, axs = plt.subplots(1, 1, figsize=(16, 4))
-sns.countplot(data=data, x="PaymentMethod", hue=data.Churn)
+fig, ax = plt.subplots(1, 2, figsize=(16, 4))
+plt.subplots_adjust(wspace=0.3)
+sns.countplot(data=data, x="Contract", ax=ax[0], hue=data.Churn)
+ax[0].set_title("Contract")
+ax[0].set_xlabel("")
+sns.countplot(data=data, x="PaperlessBilling", ax=ax[1], hue=data.Churn)
+ax[1].set_title("PaperlessBilling")
+ax[1].set_xlabel("")
+fig, ax = plt.subplots(1, 1, figsize=(14, 5))
+sns.countplot(data=data, y="PaymentMethod", hue=data.Churn, )
+ax.set_title("PaymentMethod")
+ax.set_ylabel("")
 plt.show()
 
 # Se puede observar que las probabilidades de deserción de un cliente aumentan en gran medida
@@ -527,23 +611,25 @@ plt.show()
 # para poder construir una tabla de pivotaje que cuente los valores positivos de esta variable
 churn_dummy = pd.get_dummies(data, columns=["Churn"])
 
-# Identificamos que combinación de servicios tiene más deserción en base a la variable "PhoneService"
+# Identificamos que combinación de servicios tiene más deserción en base a la variable que mas presencia tiene: "PhoneService"
 mayor_aban = pd.pivot_table(churn_dummy,index=["PhoneService"], columns=["InternetService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies"],
                             values=["Churn_Yes"],aggfunc=lambda x: x.sum() if x.sum() > 70 else np.nan)
 
-mayor_aban.plot(kind="bar" )
+fig, ax = plt.subplots(figsize=(15, 8))
+mayor_aban.plot(kind="bar", ax=ax)
 plt.title("Combinaciones de servicios con mayor cantidad de abandonos de clientes", y=1.09)
 plt.suptitle("InternetService | MultipleLines | OnlineSecurity | OnlineBackup | DeviceProtection | TechSupport | StreamingTV | StreamingMovies", y=0.93)
 plt.yticks([0,40,80,120,160,190])
 plt.xticks(rotation=0)
 plt.xlabel('')
 plt.legend('',frameon=False)
-plt.text(0.245, 0.87, 'DSL|No|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
-plt.text(0.42, 0.59, 'FO|Yes|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
-plt.text(0.585, 0.41, 'FO|Yes|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.245, 0.41, 'DSL|No|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.42, 0.86, 'FO|No|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.585, 0.58, 'FO|Yes|No|No|No|No|No|No', verticalalignment='center', transform=ax.transAxes)
 ax = plt.gca()
 ax.grid(alpha=0.5, axis="y")
 ax.set_axisbelow(True)
+plt.show()
 
 # Del gráfico mostrado identificamos que las combinaciones que mas desersión tienen son las que
 # incluyen menos servicios del catálogo que ofrece la empresa, estos clientes solo cuentan con
@@ -562,15 +648,16 @@ ax.set_axisbelow(True)
 mayor_perm = pd.pivot_table(churn_dummy,index=["PhoneService"], columns=["InternetService","MultipleLines","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies"],
                             values=["Churn_No"],aggfunc=lambda x: x.sum() if x.sum() > 112 else np.nan)
 
-mayor_perm.plot(kind="bar" )
+fig, ax = plt.subplots(figsize=(15, 8))
+mayor_perm.plot(kind="bar", ax=ax)
 plt.title("Combinaciones de servicios con mayor cantidad de permanencia de clientes", y=1.09)
 plt.suptitle("InternetService | MultipleLines | OnlineSecurity | OnlineBackup | DeviceProtection | TechSupport | StreamingTV | StreamingMovies", y=0.93)
 plt.yticks([0,100,300,500,700,900])
 plt.xticks(rotation=0)
-plt.xlabel('Internet Service')
+plt.xlabel('')
 plt.legend('',frameon=False)
 plt.text(0.25, 0.9, 'No|No|NoIS|NoIS|NoIS|NoIS|NoIS|NoIS', verticalalignment='center', transform=ax.transAxes)
-plt.text(0.50, 0.27, 'No|Yes|NoIS|NoIS|NoIS|NoIS|NoIS|NoIS', verticalalignment='center', transform=ax.transAxes)
+plt.text(0.51, 0.27, 'No|Yes|NoIS|NoIS|NoIS|NoIS|NoIS|NoIS', verticalalignment='center', transform=ax.transAxes)
 ax = plt.gca()
 ax.grid(alpha=0.5, axis="y")
 ax.set_axisbelow(True)
@@ -600,9 +687,9 @@ data_corr = pd.get_dummies(data, columns = ["gender","SeniorCitizen","Partner","
                                             "Contract","PaperlessBilling","PaymentMethod","Churn"],
                                             drop_first=True)
 
-# Debido a que contamos con muchas variables sera necesario dividir nuestro conjunto de datos y
-# graficar la matriz de correlación en base a cada una de las divisiones para poder apreciar mejor
-# la gráfica.
+# Debido a que contamos con muchas variables, será necesario dividir nuestro conjunto de datos
+# y graficar la matriz de correlación en base a cada una de estas divisiones para poder
+# apreciar mejor la gráfica.
 
 data_corr_1 = data_corr[["tenure","MonthlyCharges","TotalCharges","gender_Male","SeniorCitizen_1.0",
                         "Partner_Yes","Dependents_Yes","PhoneService_Yes","MultipleLines_No phone service",
@@ -631,7 +718,8 @@ ax = sns.heatmap(corr, mask=mask, xticklabels=corr.columns, yticklabels=corr.col
 #-------
 # "StreamingTV" vs "StreamingMovies"
 STV_SMOV=pd.crosstab(index=data['StreamingTV'],columns=data['StreamingMovies'])
-STV_SMOV.plot.bar(figsize=(7,4), rot=0)
+STV_SMOV.plot.bar(figsize=(15,8), rot=0)
+plt.show()
 
 # Observamos que las variables "StreamingTV" y "StreamingMovies" estan correlacionadas
 # positivamente, especialmente en la clase "No internet service" como nos muestra nuestra tabla
@@ -649,7 +737,8 @@ STV_SMOV.plot.bar(figsize=(7,4), rot=0)
 #-------
 # "DeviceProtection" vs "TechSupport"
 DP_TS=pd.crosstab(index=data['DeviceProtection'],columns=data['TechSupport'])
-DP_TS.plot.bar(figsize=(7,4), rot=0)
+DP_TS.plot.bar(figsize=(15,8), rot=0)
+plt.show()
 
 # Un patron similar observamos en estas variables, con la diferencia que la última clase de la
 # variable "DeviceProtection" tiene una distribución mas balanceada, sin embargo, aun posee
@@ -659,7 +748,8 @@ DP_TS.plot.bar(figsize=(7,4), rot=0)
 #-------
 # "OnlineSecurity" vs "TechSupport"
 OS_TS=pd.crosstab(index=data['OnlineSecurity'],columns=data['TechSupport'])
-OS_TS.plot.bar(figsize=(7,4), rot=0)
+OS_TS.plot.bar(figsize=(15,8), rot=0)
+plt.show()
 
 # Y lo mismo observamos al comparar "DeviceProtection" vs "TechSupport", en donde se aprecia
 # correlación positiva e igual interpretacion de comportamiento.
@@ -667,7 +757,8 @@ OS_TS.plot.bar(figsize=(7,4), rot=0)
 #-------
 # "MultipleLines" vs "PhoneService"
 ML_PS=pd.crosstab(index=data['MultipleLines'],columns=data['PhoneService'])
-ML_PS.plot.bar(figsize=(7,4), rot=0)
+ML_PS.plot.bar(figsize=(15,8), rot=0)
+plt.show()
 
 # Por último, observamos una correlación altamente negativa entre ambas variables, puesto que
 # "MultipleLines" tiende a adquirir un valor de "No" cuando "PhoneService" adquiere un valor de
@@ -1458,8 +1549,6 @@ print("AUC Tercer conjunto: %.2f%%" % (auc_2b * 100.0))
 # este modelo como resultado final para la predicción de clientes que son propensos a desertar
 # los servicios de la empresa
 
-
-
-
-
+# Guardamos el modelo
+joblib.dump(xgb_1c, "XGboost_Model_Churn")
 
