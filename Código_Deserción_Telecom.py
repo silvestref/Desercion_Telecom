@@ -1363,6 +1363,7 @@ print("AUC tercera comb.: %.2f%%" % (auc_2c * 100.0))
 
 def objective(trial):   
     
+    # Hiperparámetros y el rango de su valor a probar
     params = {"n_estimators": trial.suggest_int("n_estimators",200,1200,50),
               "max_depth": trial.suggest_int("max_depth", 10, 25, 1),
               "learning_rate": trial.suggest_loguniform("learning_rate", 0.001, 0.5),
@@ -1373,12 +1374,12 @@ def objective(trial):
               "objective": "binary:logistic",
               "use_label_encoder": "False"}
     
-    model = XGBClassifier(**params)   
-    
+    # Inicialización y entrenamiento del modelo
+    model = XGBClassifier(**params)      
     model.fit(X_train_pca,y_train_bal,eval_set=[(X_test_pca,y_test)],early_stopping_rounds=100,verbose=False)
     
-    preds = model.predict(X_test_pca)
-    
+    # Evaluación y obtención de métricas
+    preds = model.predict(X_test_pca)    
     metric = accuracy_score(y_test, preds)
     
     return metric
@@ -1399,25 +1400,22 @@ best_3 = study.trials_dataframe()
 # obtenidas para determinar cual de ellas presenta mejores resultados al clasificar nuestros datos
 
 # Para la primera combinación
-xgb_3a = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
-                       n_estimators=1200, max_depth=22, learning_rate=0.001, subsample=0.5, 
-                       colsample_bytree=0.3)
+xgb_3a = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, eval_metric="auc",
+                       n_estimators=1200, max_depth=22, learning_rate=0.001, subsample=0.5, colsample_bytree=0.3, seed=21)
 
 xgb_3a.fit(X_train_pca, y_train_bal)
 y_pred_3a = xgb_3a.predict(X_test_pca)
 
 # Para la segunda combinación
-xgb_3b = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
-                       n_estimators=1000, max_depth=15, learning_rate=0.0033, subsample=0.4, 
-                       colsample_bytree=0.4)
+xgb_3b = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, eval_metric="auc",
+                       n_estimators=1000, max_depth=15, learning_rate=0.0033, subsample=0.4, colsample_bytree=0.4, seed=21)
 
 xgb_3b.fit(X_train_pca, y_train_bal)
 y_pred_3b = xgb_3b.predict(X_test_pca)
 
 # Para la tercera combinación
-xgb_3c = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, seed=21,
-                       n_estimators=800, max_depth=25, learning_rate=0.091, subsample=0.4, 
-                       colsample_bytree=0.7)
+xgb_3c = XGBClassifier(tree_method='gpu_hist', objective="binary:logistic", use_label_encoder=False, eval_metric="auc",
+                       n_estimators=800, max_depth=25, learning_rate=0.091, subsample=0.4, colsample_bytree=0.7, seed=21)
 
 xgb_3c.fit(X_train_pca, y_train_bal)
 y_pred_3c = xgb_3c.predict(X_test_pca)
@@ -1428,16 +1426,19 @@ y_pred_3c = xgb_3c.predict(X_test_pca)
 # Para la primera combinación
 f1_3a = f1_score(y_test, y_pred_3a)
 acc_3a = accuracy_score(y_test, y_pred_3a)
+auc_3a = roc_auc_score(y_test, y_pred_3a)
 report_3a = classification_report(y_test,y_pred_3a)
 
 # Para la segunda combinación
 f1_3b = f1_score(y_test, y_pred_3b)
 acc_3b = accuracy_score(y_test, y_pred_3b)
+auc_3b = roc_auc_score(y_test, y_pred_3b)
 report_3b = classification_report(y_test,y_pred_3b)
 
 # Para la tercera combinación
 f1_3c = f1_score(y_test, y_pred_3c)
 acc_3c = accuracy_score(y_test, y_pred_3c)
+auc_3c = roc_auc_score(y_test, y_pred_3c)
 report_3c = classification_report(y_test,y_pred_3c)
 
 
@@ -1456,29 +1457,28 @@ print(report_3b)
 print("-------------------------------------------------")
 print(report_3c)
 
-# Observamos que la primera combinación tiene mejores valores de métrica que las demas combinaciones
+# Observamos que la combianción 3 tiene un rendimiento muy por debajo de las demás combinaciones,
+# y que tanto la combinación 2 y 3 tienen puntajes muy similares
 
-# Procederemos a graficar la matriz de confusión y la curva ROC-AUC, por ultimo obtendremos su valor
-# como métrica para tomar la decisión final sobre que combinación elegir 
+fig, ax = plt.subplots(1, 3, figsize=(20, 5))
 
-plt.figure(figsize=(4,3))
-sns.heatmap(confusion_matrix(y_test, y_pred_3a), annot=True, fmt = "d", linecolor="k", linewidths=3)
-plt.title("CONFUSION MATRIX 2A",fontsize=14)
-plt.show()
+sns.heatmap(confusion_matrix(y_test, y_pred_3a), annot=True, fmt = "d", linecolor="k", linewidths=3, ax=ax[0])
+ax[0].set_title("COMBINACIÓN 1",fontsize=14)
 
 plt.figure(figsize=(4,3))
-sns.heatmap(confusion_matrix(y_test, y_pred_3b), annot=True, fmt = "d", linecolor="k", linewidths=3)
-plt.title("CONFUSION MATRIX 2B",fontsize=14)
-plt.show()
+sns.heatmap(confusion_matrix(y_test, y_pred_3b), annot=True, fmt = "d", linecolor="k", linewidths=3, ax=ax[1])
+ax[1].set_title("COMBINACIÓN 2",fontsize=14)
 
 plt.figure(figsize=(4,3))
-sns.heatmap(confusion_matrix(y_test, y_pred_3c), annot=True, fmt = "d", linecolor="k", linewidths=3)
-plt.title("CONFUSION MATRIX 2C",fontsize=14)
+sns.heatmap(confusion_matrix(y_test, y_pred_3c), annot=True, fmt = "d", linecolor="k", linewidths=3, ax=ax[2])
+ax[2].set_title("COMBINACIÓN 3",fontsize=14)
+
 plt.show()
 
-# A simple vista podemos descartar la combinacion 1 ya que su balance entre verdaderos positivos
-# y falsos positivos es menor en comparacion con las demás combinaciones, y que tanto la combinacion
-# 2 como 3 tienen distribuciones similares
+# De las matrices de confusión observamos que la combinación 3 tiene un rendimiento muy malo al
+# predecir muestras de la clase minoritaria, y que la combinación 2 tiene ligeramente mejor
+# balance en cuanto a reconocer verdaderos positivos y falsos positivos en comparación con las
+# combinación 1
 
 y_pred_prob3a = xgb_3a.predict_proba(X_test_pca)[:,1]
 fpr_3a, tpr_3a, thresholds_3a = roc_curve(y_test, y_pred_prob3a)
@@ -1487,40 +1487,38 @@ fpr_3b, tpr_3b, thresholds_3b = roc_curve(y_test, y_pred_prob3b)
 y_pred_prob3c = xgb_3c.predict_proba(X_test_pca)[:,1]
 fpr_3c, tpr_3c, thresholds_3c = roc_curve(y_test, y_pred_prob3c)
 
+plt.figure(figsize=(16, 8))
 plt.plot([0, 1], [0, 1], 'k--' )
 plt.plot(fpr_3a, tpr_3a, label='Combinación 1',color = "r")
 plt.plot(fpr_3b, tpr_3b, label='Combinación 2',color = "g")
 plt.plot(fpr_3c, tpr_3c, label='Combinación 3',color = "b")
-plt.xlabel('False Positive Rate')
-plt.ylabel('True Positive Rate')
-plt.title('XGBOOST ROC Curve',fontsize=16)
+plt.xlabel('Ratio de Falsos Positivos')
+plt.ylabel('Ratio de Verdaderos Positivos')
+plt.title('Curva ROC-AUC',fontsize=16)
 plt.legend()
 plt.show()
 
-# En el grafico distinguimos que la combinacion 3 tiene la peor curva AUC, y que tanto las
-# combinaciones 1 como 2, tienen un ajuste similar, por lo que calcularan sus valores en forma
-# de porcentaje
-
-auc_3a = roc_auc_score(y_test, y_pred_3a)
-auc_3b = roc_auc_score(y_test, y_pred_3b)
-auc_3c = roc_auc_score(y_test, y_pred_3c)
+# Con el gráfico de la curva podemos descartar la combinación 3, para solo quedarnos con la
+# evaluación de las combinaciones 1 y 2
 
 print("AUC primera comb.: %.2f%%" % (auc_2a * 100.0))
 print("AUC segunda comb.: %.2f%%" % (auc_2b * 100.0))
 print("AUC tercera comb.: %.2f%%" % (auc_2c * 100.0))
 
-# Con todo lo anterior mostrado observamos que la segunda combinacion tiene ligeramente mejores
-# valores de métrica que las demás combinaciones, por lo tanto, se eligira a esta combinacion
-# como referente del modelo de "Datos escalados, rebalanceados y con PCA".
+# Y con este último paso realizado podemos decir que si bien las combinaciones 1 y 2 tienen
+# valores de métrica muy parecidos, elegir cualquiera de estos modelos sería una buena decisión,
+# asi que en este caso nos quedaremos con la combinación 2, la cual dió ligeramente mejores
+# resultados en la matriz de confusión al tener un mayor número de predicciones correctas en la
+# clase minoritaria, por lo tanto, utilizaremos este modelo como referente del conjunto de
+# "Hiperparámetros para datos rebalanceados y con PCA".
 
 
 # ELECCIÓN DEL MEJOR MODELO
 #-----------------------------
 
-# Despues de haber elegido las tres mejores combinaciones en base al entrenamiento de conjuntos
-# sin transformacion y con transformacion que habiamos realizado en la anterior seccion, procederemos
-# a compararlos entre si para quedarnos con el modelo definitivo que mejores resultados de evaluación
-# tenga.
+# Después de haber elegido las tres mejores combinaciones en base al entrenamiento de conjuntos
+# con diferentes tipos de transformación, procederemos a compararlos entre sí para quedarnos
+# con un modelo definitivo el cual mejores resultados de evaluación tenga.
 
 print("F1 Primer conjunto: %.2f%%" % (f1_1c * 100.0))
 print("Accuracy Primer conjunto: %.2f%%" % (acc_1c * 100.0))
@@ -1537,8 +1535,9 @@ print(report_2c)
 print("-------------------------------------------------")
 print(report_3b)
 
-# Observamos que hasta el momento, el modelo del primer conjunto y el segundo conjunto tienen
-# resultados similares, por lo que se procedera a graficar sus matrices de conjusion
+# De principio estamos observando que el modelo del primer conjunto (Datos rebalanceados por XGBoost)
+# tiene un rendimiento superior en cuanto a puntaje F1 se refiere, y en cuanto a precisión tiene un
+# puntaje similar con el modelo de la combinacion 2 (Datos rebalanceados por SMOTE-NC)
 
 plt.figure(figsize=(4,3))
 sns.heatmap(confusion_matrix(y_test, y_pred_1c), annot=True, fmt = "d", linecolor="k", linewidths=3)
@@ -1555,10 +1554,9 @@ sns.heatmap(confusion_matrix(y_test, y_pred_3b), annot=True, fmt = "d", linecolo
 plt.title("Tercer conjunto",fontsize=14)
 plt.show()
 
-# Intuitivamente podemos descartar el modelo del tercer conjunto ya que sus resultados al predecir
-# nuestra clase minoritaria son inferiores a los demas modelos. Por otra parte, observamos que
-# el modelo del primer conjunto clasifica ligeramente mejor los clientes que abandonaron los
-# servicios de la empresa
+# De nuestras matrices de confusión observamos que el modelo del primer conjunto tiene ligeramente
+# una mayor sensibilidad en comparación con el del segundo conjunto, y que el modelo del tercer
+# conjunto tiene un bajo rendimiento en la identificacion de verdaderos positivos
 
 
 plt.plot([0, 1], [0, 1], 'k--' )
@@ -1571,19 +1569,23 @@ plt.title('XGBOOST ROC Curve',fontsize=16)
 plt.legend()
 plt.show()
 
-# Con la grafica de la curva ROC-AUC claramente podemos identificar que el modelo del primer
-# conjunto tiene una mayor sensibilidad frente a los demás modelos, por lo que el último paso
-# a realizar para escoger que modelo utilizar es calcular el valor de la curva como métrica
+# El gráfico de la curva ROC-AUC nos da un resultado muy interesante, ya que podemos ver la
+# superioridad del modelo del primer conjunto en cuanto a la prediccion correcta de verdaderos
+# positivos y falsos positivos en comparación con los demás modelos, por lo tanto, ya se puede
+# deducir cual es la combinación de parámetros que mejor se ajustan a nuestros datos
 
 print("AUC Primer conjunto: %.2f%%" % (auc_1c * 100.0))
 print("AUC Segundo conjunto: %.2f%%" % (auc_2c * 100.0))
 print("AUC Tercer conjunto: %.2f%%" % (auc_2b * 100.0))
 
-# Con esto ultimo calculado, dado que el modelo del primer conjunto nos ha dado mejores resultados
-# en las métricas importantes cuando se trabajan con datos desbalanceados: F1 y AUC, se tomara
-# este modelo como resultado final para la predicción de clientes que son propensos a desertar
-# los servicios de la empresa
+# Finalmente, con estos puntajes calculados, llegamos a la decision de utilizar el mejor modelo
+# proveniente del primer conjunto (Datos rebalanceados por XGBoost), debido a que a lo largo de
+# todo el proceso de selección, mostró superioridad frente a los demás modelos.
 
-# Guardamos el modelo
+# Combinación de parámetros del modelo final:
+# tree_method="gpu_hist", objective="binary:logistic", eval_metric="auc", use_label_encoder=False,
+# n_estimators=400, max_depth=18, learning_rate=0.0013, subsample=0.2, colsample_bytree=0.9, seed=21
+
+# Guardado del modelo
 joblib.dump(xgb_1c, "XGboost_Model_Churn")
 
